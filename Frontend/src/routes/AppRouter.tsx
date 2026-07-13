@@ -14,6 +14,7 @@ import UniversityDashboard from "../pages/University/UniversityDashboard";
 import CompanyDashboard from "../pages/Recruiter/CompanyDashboard";
 import PortalLanding from "../pages/Landing/PortalLanding";
 import DebugMenu from "../components/DebugMenu";
+import ProtectedRoute from "../components/auth/ProtectedRoute";
 import { DashboardProvider } from "../context/DashboardContext";
 
 const getActivePortal = (): "student" | "university" | "recruiter" | "main" => {
@@ -54,7 +55,7 @@ export default function AppRouter() {
             <>
               <Route path="/" element={<PortalLanding portal="student" />} />
               {authRoutes}
-              <Route path="/dashboard" element={<StudentDashboard />} />
+              <Route path="/dashboard" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           )}
@@ -63,7 +64,7 @@ export default function AppRouter() {
             <>
               <Route path="/" element={<PortalLanding portal="university" />} />
               {authRoutes}
-              <Route path="/dashboard" element={<UniversityDashboard />} />
+              <Route path="/dashboard" element={<ProtectedRoute><UniversityDashboard /></ProtectedRoute>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           )}
@@ -72,7 +73,7 @@ export default function AppRouter() {
             <>
               <Route path="/" element={<PortalLanding portal="recruiter" />} />
               {authRoutes}
-              <Route path="/dashboard" element={<CompanyDashboard />} />
+              <Route path="/dashboard" element={<ProtectedRoute><CompanyDashboard /></ProtectedRoute>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           )}
@@ -81,9 +82,9 @@ export default function AppRouter() {
             <>
               <Route path="/" element={<LandingPage />} />
               {authRoutes}
-              <Route path="/student/dashboard" element={<StudentDashboard />} />
-              <Route path="/university/dashboard" element={<UniversityDashboard />} />
-              <Route path="/company/dashboard" element={<CompanyDashboard />} />
+              <Route path="/student/dashboard" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
+              <Route path="/university/dashboard" element={<ProtectedRoute><UniversityDashboard /></ProtectedRoute>} />
+              <Route path="/company/dashboard" element={<ProtectedRoute><CompanyDashboard /></ProtectedRoute>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           )}

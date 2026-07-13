@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDashboard } from "../../context/DashboardContext";
 import type { UserRole } from "../../context/DashboardContext";
+import { useAuth } from "../../context/AuthContext";
 import logo from "../../assets/logo/sbridge-logo.png";
 import { GraduationCap, Building2, Briefcase, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import AuthLayout from "../../components/auth/AuthLayout";
@@ -11,25 +12,26 @@ import { getActivePortal, getDefaultRole, roleConfig } from "../../components/au
 export default function LoginPage() {
   const navigate = useNavigate();
   const { setRole } = useDashboard();
+  const { login, isLoading, error, clearError } = useAuth();
   const activePortal = getActivePortal();
 
   const [selectedRole, setSelectedRole] = useState<UserRole>(() => getDefaultRole(activePortal));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   const config = roleConfig[selectedRole];
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    setTimeout(() => {
+    clearError();
+    try {
+      await login(email, password);
       setRole(selectedRole);
-      setIsLoading(false);
       navigate("/signin-successful", { state: { role: selectedRole } });
-    }, 800);
+    } catch {
+      // error is already set in AuthContext
+    }
   };
 
   return (
@@ -69,6 +71,12 @@ export default function LoginPage() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium text-center">
+            {error}
           </div>
         )}
 

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { UserRole } from "../../context/DashboardContext";
+import { useAuth } from "../../context/AuthContext";
 import logo from "../../assets/logo/sbridge-logo.png";
 import {
   GraduationCap,
@@ -20,16 +21,18 @@ import { getActivePortal, getDefaultRole, roleConfig } from "../../components/au
 export default function SignupPage() {
   const navigate = useNavigate();
   const activePortal = getActivePortal();
+  const { register, isLoading, error, clearError } = useAuth();
 
   const [selectedRole, setSelectedRole] = useState<UserRole>(() => getDefaultRole(activePortal));
   const [step, setStep] = useState(activePortal === "main" ? 1 : 2);
-  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     orgName: "",
     department: "",
+    studentId: "",
+    indexNumber: "",
   });
 
   const config = roleConfig[selectedRole];
@@ -38,14 +41,21 @@ export default function SignupPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate("/signup-otp", { state: { email: formData.email, role: selectedRole } });
-    }, 1200);
+    clearError();
+    try {
+      await register(
+        formData.email,
+        formData.password,
+        selectedRole,
+        selectedRole === "student" ? formData.studentId : undefined,
+        selectedRole === "student" ? formData.indexNumber : undefined
+      );
+      navigate("/signup-successful", { state: { email: formData.email, role: selectedRole } });
+    } catch {
+      // error is already set in AuthContext
+    }
   };
 
   const roleCards = (
@@ -98,6 +108,11 @@ export default function SignupPage() {
 
   const signupForm = (
     <form onSubmit={handleSignup} className="space-y-4">
+      {error && (
+        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium text-center">
+          {error}
+        </div>
+      )}
       <div className="flex items-center justify-between mb-2">
         <span className={`text-[10px] font-extrabold uppercase tracking-widest ${config.text}`}>
           Register as {config.label}
@@ -144,6 +159,22 @@ export default function SignupPage() {
 
       {selectedRole === "student" && (
         <>
+          <AuthInput
+            label="Student ID"
+            icon={User}
+            placeholder="ST-12345"
+            value={formData.studentId}
+            onChange={(v) => handleInputChange("studentId", v)}
+            required
+          />
+          <AuthInput
+            label="Index Number"
+            icon={BookOpen}
+            placeholder="IDX-98765"
+            value={formData.indexNumber}
+            onChange={(v) => handleInputChange("indexNumber", v)}
+            required
+          />
           <AuthInput
             label="University Name"
             icon={Building2}
