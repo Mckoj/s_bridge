@@ -14,7 +14,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthUser>;
   register: (email: string, password: string, role: UserRole, studentId?: string, indexNumber?: string) => Promise<void>;
   logout: () => void;
   clearError: () => void;
@@ -62,6 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { token: jwt, user: userData } = response.data;
       setToken(jwt);
       setUser(userData);
+      return userData;
     } catch (err: any) {
       const message = err.response?.data?.message || "Login failed. Please try again.";
       setError(message);

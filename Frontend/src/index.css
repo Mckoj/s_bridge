@@ -1,5 +1,31 @@
 @import "tailwindcss";
 
+/* Let Lenis own all scrolling — disable browser native smooth scroll */
+html {
+  scroll-behavior: auto !important;
+}
+
+/* Prevent Lenis from creating scroll issues on fixed elements */
+html.lenis {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
 @keyframes draw-donut {
   from {
     stroke-dashoffset: 238.76;
