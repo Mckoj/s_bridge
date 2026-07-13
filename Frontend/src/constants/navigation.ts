@@ -4,19 +4,15 @@ export const NAVIGATION = [
     href: "#home",
   },
   {
-    name: "About",
-    href: "#about",
+    name: "Problem",
+    href: "#problem",
   },
   {
-    name: "Features",
-    href: "#features",
+    name: "Solution",
+    href: "#solution",
   },
   {
-    name: "Statistics",
-    href: "#statistics",
-  },
-  {
-    name: "Contact",
-    href: "#contact",
+    name: "How It Works",
+    href: "#how-it-works",
   },
 ];
