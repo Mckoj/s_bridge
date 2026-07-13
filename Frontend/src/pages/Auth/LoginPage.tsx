@@ -12,7 +12,8 @@ import { getActivePortal, getDefaultRole, roleConfig } from "../../components/au
 export default function LoginPage() {
   const navigate = useNavigate();
   const { setRole } = useDashboard();
-  const { login, isLoading, error, clearError } = useAuth();
+  const { login, isLoading, error, clearError, logout } = useAuth();
+  const [localError, setLocalError] = useState<string | null>(null);
   const activePortal = getActivePortal();
 
   const [selectedRole, setSelectedRole] = useState<UserRole>(() => getDefaultRole(activePortal));
@@ -25,8 +26,17 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
+    setLocalError(null);
     try {
-      await login(email, password);
+      const userData = await login(email, password);
+      const backendRole = (userData?.role || "").toLowerCase();
+      if (backendRole !== selectedRole) {
+        await logout();
+        setLocalError(
+          `Selected role does not match account role (${backendRole}). Please choose the correct role.`
+        );
+        return;
+      }
       setRole(selectedRole);
       navigate("/signin-successful", { state: { role: selectedRole } });
     } catch {
@@ -74,9 +84,9 @@ export default function LoginPage() {
           </div>
         )}
 
-        {error && (
+        {(error || localError) && (
           <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium text-center">
-            {error}
+            {error || localError}
           </div>
         )}
 

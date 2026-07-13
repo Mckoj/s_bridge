@@ -19,33 +19,13 @@ export default function SignInSuccessfulPage() {
   const config = roleConfig[role];
   const activePortal = getActivePortal();
 
-  // Auto redirect after 3 seconds to the appropriate dashboard
+  // Auto-redirect to /dashboard after 3 s — works on all portals
   useEffect(() => {
-    const timer = setTimeout(() => {
-      let dashboardPath = "/dashboard";
-      
-      // If on main portal, redirect to role-specific dashboard
-      if (activePortal === "main") {
-        const path = role === "recruiter" ? "company" : role;
-        dashboardPath = `/${path}/dashboard`;
-      }
-      
-      navigate(dashboardPath);
-    }, 3000);
-
+    const timer = setTimeout(() => navigate("/dashboard"), 3000);
     return () => clearTimeout(timer);
-  }, [navigate, activePortal, role]);
+  }, [navigate]);
 
-  const handleDashboardRedirect = () => {
-    let dashboardPath = "/dashboard";
-    
-    if (activePortal === "main") {
-      const path = role === "recruiter" ? "company" : role;
-      dashboardPath = `/${path}/dashboard`;
-    }
-    
-    navigate(dashboardPath);
-  };
+  const handleDashboardRedirect = () => navigate("/dashboard");
 
   return (
     <AuthLayout>
