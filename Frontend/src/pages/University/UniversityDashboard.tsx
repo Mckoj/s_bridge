@@ -2,19 +2,20 @@ import React from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../context/AuthContext";
 import { useDashboard } from "../../context/DashboardContext";
-import { Users, Briefcase, Clock, CheckCircle2, ChevronRight } from "lucide-react";
+import { Users, Briefcase, Clock, CheckCircle2, ChevronRight, Sparkles } from "lucide-react";
 
 function useTheme() { return useDashboard().theme === "dark"; }
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const dark = useTheme();
   return (
-    <div className={`rounded-2xl transition-transform duration-200 transform hover:-translate-y-1 hover:shadow-2xl
+    <div className={`relative overflow-hidden rounded-[24px] border shadow-[0_20px_60px_-30px_rgba(15,23,42,0.35)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_-25px_rgba(139,92,246,0.28)]
       ${dark
-        ? "bg-gradient-to-br from-[#071024]/60 to-[#07122a]/40 border border-transparent ring-1 ring-white/6"
-        : "backdrop-blur-sm bg-white/60 border border-transparent ring-1 ring-black/6"
+        ? "bg-slate-900/70 border-slate-800/80"
+        : "bg-white/80 border-slate-200/80"
       } ${className}`}>
-      {children}
+      <div className={`pointer-events-none absolute inset-0 bg-linear-to-br ${dark ? "from-violet-500/10 via-slate-900/40 to-transparent" : "from-violet-100/70 via-white/50 to-transparent"}`} />
+      <div className="relative">{children}</div>
     </div>
   );
 }
@@ -25,7 +26,7 @@ function CardHeader({ title, action }: { title: string; action?: string }) {
     <div className="flex items-center justify-between mb-4">
       <p className={`text-sm font-bold ${dark ? "text-white" : "text-slate-800"}`}>{title}</p>
       {action && (
-        <button className="flex items-center gap-1 text-[10px] text-blue-500 font-semibold hover:underline">
+        <button className={`flex items-center gap-1 text-[10px] font-semibold hover:underline ${dark ? "text-violet-300" : "text-violet-600"}`}>
           {action} <ChevronRight size={10} />
         </button>
       )}
@@ -42,10 +43,6 @@ function StatCard({ title, value, subtitle, icon: Icon, iconBg, iconColor }:
         <p className={`text-xs font-semibold mb-1 ${dark ? "text-slate-300" : "text-slate-600"}`}>{title}</p>
         <p className={`text-3xl font-extrabold leading-none tabular-nums ${dark ? "text-white" : "text-slate-800"}`}>{value}</p>
         <p className={`text-[11px] font-medium mt-1.5 ${dark ? "text-slate-400" : "text-slate-500"}`}>{subtitle}</p>
-        <div className="mt-3 flex items-center gap-2">
-          <span className={`text-[11px] font-semibold text-green-400`}>+4.2%</span>
-          <span className={`text-[10px] ${dark ? "text-slate-500" : "text-slate-400"}`}>vs. last period</span>
-        </div>
       </div>
       <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${iconBg} drop-shadow-sm`}>
         <Icon size={24} className={iconColor} />
@@ -54,14 +51,18 @@ function StatCard({ title, value, subtitle, icon: Icon, iconBg, iconColor }:
   );
 }
 
+// ── Empty state ───────────────────────────────────────────────────────────────
+function EmptyState({ label }: { label: string }) {
+  const dark = useTheme();
+  return (
+    <p className={`text-[11px] text-center py-4 ${dark ? "text-slate-600" : "text-slate-400"}`}>
+      {label}
+    </p>
+  );
+}
+
 // ── Donut chart ───────────────────────────────────────────────────────────────
 interface Segment { label: string; value: number; pct: string; color: string; dot: string }
-
-const APPROVAL_SEGMENTS: Segment[] = [
-  { label: "Pending",  value: 24, pct: "40%", color: "#f97316", dot: "bg-orange-400" },
-  { label: "Approved", value: 30, pct: "50%", color: "#3b82f6", dot: "bg-blue-500"   },
-  { label: "Rejected", value:  6, pct: "10%", color: "#ef4444", dot: "bg-red-500"    },
-];
 
 function DonutChart({ segments, total, centerValue, centerLabel }: {
   segments: Segment[]; total: number; centerValue: string | number; centerLabel: string;
@@ -148,61 +149,108 @@ function LineChart({ color }: { color: string }) {
 
 export default function UniversityDashboard() {
   const { user } = useAuth();
-  const dark = useTheme();
-  const raw  = user?.email?.split("@")[0] ?? "Admin";
-  const name = "Dr. " + raw.charAt(0).toUpperCase() + raw.slice(1);
+  const { approvals, activities } = useDashboard();
+  const dark  = useTheme();
+  const raw   = user?.email?.split("@")[0] ?? "Admin";
+  const name  = "Dr. " + raw.charAt(0).toUpperCase() + raw.slice(1);
+
+  // TODO: derive these counts from backend data (GET /api/university/stats)
+  const totalStudents     = 0;
+  const activeInternships = 0;
+  const pendingApprovals  = approvals.filter(a => a.status === "Pending").length;
+  const completed         = 0;
+
+  // TODO: derive approval segments from backend data
+  const approvalSegments: Segment[] = approvals.length > 0
+    ? [
+        { label: "Pending",  value: approvals.filter(a => a.status === "Pending").length,  pct: "", color: "#f97316", dot: "bg-orange-400" },
+        { label: "Approved", value: approvals.filter(a => a.status === "Approved").length, pct: "", color: "#3b82f6", dot: "bg-blue-500"   },
+        { label: "Rejected", value: approvals.filter(a => a.status === "Rejected").length, pct: "", color: "#ef4444", dot: "bg-red-500"    },
+      ].map(s => ({ ...s, pct: `${Math.round((s.value / approvals.length) * 100)}%` }))
+    : [];
+
+  // TODO: fetch top companies from GET /api/university/top-companies
+  const topCompanies: { name: string; students: number }[] = [];
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-5">
-        <div>
-          <h1 className={`text-2xl font-extrabold ${dark ? "text-white" : "text-slate-800"}`}>Welcome back, {name}! 👋</h1>
-          <p className={`text-sm mt-0.5 ${dark ? "text-slate-400" : "text-slate-500"}`}>Overview of internship activities and student progress.</p>
-        </div>
+      <div className="max-w-6xl mx-auto">
+        <div className={`relative overflow-hidden rounded-[30px] border p-6 shadow-[0_24px_80px_-32px_rgba(139,92,246,0.35)] ${dark ? "border-violet-500/15 bg-slate-900/70" : "border-violet-200/70 bg-[radial-gradient(circle_at_top_left,_rgba(139,92,246,0.18),_transparent_30%),linear-gradient(135deg,_rgba(255,255,255,0.95)_0%,_rgba(245,243,255,0.95)_100%)]"}`}>
+          <div className={`pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(139,92,246,0.16),_transparent_26%)] ${dark ? "opacity-80" : "opacity-100"}`} />
+          <div className="relative space-y-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold ${dark ? "border-violet-500/20 bg-violet-500/10 text-violet-300" : "border-violet-200 bg-violet-50/80 text-violet-700"}`}>
+                  <Sparkles size={13} />
+                  University workspace
+                </div>
+                <h1 className={`mt-3 text-2xl font-extrabold ${dark ? "text-white" : "text-slate-800"}`}>Welcome back, {name}! 👋</h1>
+                <p className={`mt-1 text-sm ${dark ? "text-slate-400" : "text-slate-500"}`}>Overview of internship activities and student progress.</p>
+              </div>
+            </div>
 
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-          <StatCard title="Total Students"     value={320} subtitle="Active Students"  icon={Users}       iconBg="bg-blue-50"   iconColor="text-blue-500" />
-          <StatCard title="Active Internships" value={185} subtitle="Ongoing"          icon={Briefcase}   iconBg="bg-blue-50"   iconColor="text-blue-500" />
-          <StatCard title="Pending Approvals"  value={24}  subtitle="Requires Action"  icon={Clock}       iconBg="bg-orange-50" iconColor="text-orange-500" />
-          <StatCard title="Completed"          value={142} subtitle="This Semester"    icon={CheckCircle2} iconBg="bg-green-50"  iconColor="text-green-500" />
+            {/* Stats — values come from backend */}
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+          <StatCard title="Total Students"     value={totalStudents}     subtitle="Active Students"  icon={Users}        iconBg="bg-blue-50"   iconColor="text-blue-500" />
+          <StatCard title="Active Internships" value={activeInternships} subtitle="Ongoing"          icon={Briefcase}    iconBg="bg-blue-50"   iconColor="text-blue-500" />
+          <StatCard title="Pending Approvals"  value={pendingApprovals}  subtitle="Requires Action"  icon={Clock}        iconBg="bg-orange-50" iconColor="text-orange-500" />
+          <StatCard title="Completed"          value={completed}         subtitle="This Semester"    icon={CheckCircle2} iconBg="bg-green-50"  iconColor="text-green-500" />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
 
+          {/* Internship Approvals donut */}
           <Card className="p-5">
             <CardHeader title="Internship Approvals" action="View All" />
-            <div className="flex gap-4 items-center">
-              <DonutChart segments={APPROVAL_SEGMENTS} total={60} centerValue={24} centerLabel="Pending" />
-              <div className="space-y-2 flex-1 min-w-0">
-                {APPROVAL_SEGMENTS.map(s => (
-                  <div key={s.label} className="flex items-center justify-between text-[10px]">
-                    <div className="flex items-center gap-1.5">
-                      <div className={`w-2 h-2 rounded-full ${s.dot} shrink-0`} />
-                      <span className={`font-medium ${dark ? "text-slate-400" : "text-slate-600"}`}>{s.label}</span>
-                    </div>
-                    <span className={`font-semibold tabular-nums ${dark ? "text-slate-400" : "text-slate-500"}`}>{s.value} ({s.pct})</span>
+            {approvalSegments.length === 0
+              ? <EmptyState label="No approvals yet" />
+              : (
+                <div className="flex gap-4 items-center">
+                  <DonutChart
+                    segments={approvalSegments}
+                    total={approvals.length}
+                    centerValue={pendingApprovals}
+                    centerLabel="Pending"
+                  />
+                  <div className="space-y-2 flex-1 min-w-0">
+                    {approvalSegments.map(s => (
+                      <div key={s.label} className="flex items-center justify-between text-[10px]">
+                        <div className="flex items-center gap-1.5">
+                          <div className={`w-2 h-2 rounded-full ${s.dot} shrink-0`} />
+                          <span className={`font-medium ${dark ? "text-slate-400" : "text-slate-600"}`}>{s.label}</span>
+                        </div>
+                        <span className={`font-semibold tabular-nums ${dark ? "text-slate-400" : "text-slate-500"}`}>{s.value} ({s.pct})</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              )
+            }
           </Card>
 
+          {/* Recent Activity */}
           <Card className="p-5">
             <CardHeader title="Recent Activity" />
-            <ActivityItem text="John Doe submitted a report"       time="2 hours ago" />
-            <ActivityItem text="Sarah Wilson completed internship"  time="5 hours ago" />
-            <ActivityItem text="Mike Brown application approved"    time="1 day ago" />
-            <ActivityItem text="Emily Davis report approved"        time="1 day ago" />
+            {activities.length === 0
+              ? <EmptyState label="No recent activity" />
+              : activities.map(a => (
+                  <ActivityItem key={a.id} text={`${a.user} ${a.action}`} time={a.time} />
+                ))
+            }
           </Card>
 
+          {/* Top Companies */}
           <Card className="p-5">
             <CardHeader title="Top Companies" action="View All" />
-            <CompanyRow idx={0} name="Tech Solutions Ltd." students={18} />
-            <CompanyRow idx={1} name="InnovateX"           students={15} />
-            <CompanyRow idx={2} name="Global Soft Inc."    students={12} />
-            <CompanyRow idx={3} name="Future Labs"         students={9} />
+            {topCompanies.length === 0
+              ? <EmptyState label="No company data yet" />
+              : topCompanies.map((c, idx) => (
+                  <CompanyRow key={c.name} idx={idx} name={c.name} students={c.students} />
+                ))
+            }
           </Card>
 
+          {/* Analytics chart */}
           <Card className="p-5">
             <div className="flex items-center justify-between mb-4">
               <p className={`text-sm font-bold ${dark ? "text-white" : "text-slate-800"}`}>Analytics Overview</p>
@@ -219,6 +267,8 @@ export default function UniversityDashboard() {
               <div className="flex-1"><LineChart color="#7c3aed" /></div>
             </div>
           </Card>
+          </div>
+          </div>
         </div>
       </div>
     </DashboardLayout>

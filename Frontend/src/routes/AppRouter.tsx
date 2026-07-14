@@ -15,7 +15,6 @@ import CompanyDashboard from "../pages/Recruiter/CompanyDashboard";
 import PortalLanding from "../pages/Landing/PortalLanding";
 import RoleBasedDashboard from "../pages/Dashboard/RoleBasedDashboard";
 import DashboardSubPage from "../pages/Dashboard/DashboardSubPage";
-import DebugMenu from "../components/DebugMenu";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import { DashboardProvider } from "../context/DashboardContext";
 
@@ -70,7 +69,6 @@ export default function AppRouter() {
   return (
     <DashboardProvider>
       <BrowserRouter>
-        <DebugMenu />
         <Routes>
 
           {/* ── Student portal ─────────────────────────────────── */}

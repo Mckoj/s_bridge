@@ -23,10 +23,10 @@ export default function ForgotPasswordPage() {
   return (
     <AuthLayout>
       <AuthCard>
-        <div className="flex flex-col items-center text-center mb-8">
-          <img src={logo} alt="SBridge Logo" className="h-12 w-auto mb-3 select-none" />
-          <h2 className="text-xl font-extrabold tracking-tight">Forgot Password?</h2>
-          <p className="text-xs text-slate-400 font-medium mt-1 max-w-xs">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <img src={logo} alt="SBridge Logo" className="mb-3 h-12 w-auto select-none" />
+          <h2 className="text-xl font-extrabold tracking-tight text-white">Forgot Password?</h2>
+          <p className="mt-1 max-w-xs text-xs font-medium text-slate-400">
             Enter your email and we'll send you a code to reset your password.
           </p>
         </div>

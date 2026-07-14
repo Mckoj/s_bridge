@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Bell, Search, LogOut, Menu, X,
   FileText, Briefcase, BarChart2, MessageSquare, Settings,
   User, Users, CheckSquare, Sun, Moon,
-  PlusSquare, ClipboardList, UserCheck,
+  PlusSquare, ClipboardList,
 } from "lucide-react";
 
 const roleNav = {
