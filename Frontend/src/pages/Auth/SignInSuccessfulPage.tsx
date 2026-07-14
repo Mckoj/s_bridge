@@ -17,7 +17,7 @@ export default function SignInSuccessfulPage() {
   const state = (location.state as LocationState) ?? {};
   const role = state.role ?? "student";
   const config = roleConfig[role];
-  const activePortal = getActivePortal();
+  getActivePortal();
 
   // Auto-redirect to /dashboard after 3 s — works on all portals
   useEffect(() => {

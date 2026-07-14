@@ -15,7 +15,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import AuthLayout from "../../components/auth/AuthLayout";
-import { AuthCard, AuthInput, AuthButton } from "../../components/auth/AuthComponents";
+import { AuthCard, AuthInput, AuthButton, AuthDivider, SocialAuthButtons } from "../../components/auth/AuthComponents";
 import { getActivePortal, getDefaultRole, roleConfig } from "../../components/auth/authUtils";
 
 export default function SignupPage() {
@@ -242,6 +242,9 @@ export default function SignupPage() {
           </>
         )}
       </AuthButton>
+
+      <AuthDivider label="or sign up with" />
+      <SocialAuthButtons />
     </form>
   );
 

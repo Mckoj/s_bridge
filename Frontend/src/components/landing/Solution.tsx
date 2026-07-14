@@ -36,10 +36,10 @@ const SOLUTIONS = [
     icon: Building2,
     who: "For Universities",
     tagline: "Full oversight of every student, every placement, in real time.",
-    color: "from-purple-600 to-violet-600",
-    border: "border-purple-500/20",
-    iconBg: "bg-purple-500/10",
-    iconColor: "text-purple-400",
+    color: "from-violet-600 to-purple-600",
+    border: "border-violet-500/20",
+    iconBg: "bg-violet-500/10",
+    iconColor: "text-violet-400",
     perks: [
       "Real-time placement dashboards by department",
       "Automated company eligibility checks",
@@ -58,17 +58,13 @@ export default function Solution() {
   const cardRefs = [card0Ref, card1Ref, card2Ref];
 
   return (
-    <section
-      id="solution"
-      className="relative bg-[#020817] py-28 md:py-36 overflow-hidden"
-    >
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-24 bg-gradient-to-b from-transparent via-slate-700 to-transparent" />
-      <div className="absolute top-1/4 right-0 h-[600px] w-[600px] rounded-full bg-blue-600/5 blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-1/4 left-0 h-[500px] w-[500px] rounded-full bg-purple-600/5 blur-[150px] pointer-events-none" />
+    <section id="solution" className="relative overflow-hidden bg-[radial-gradient(circle_at_top_right,_rgba(16,185,129,0.09),_transparent_24%),linear-gradient(180deg,_#07111f_0%,_#0f172a_100%)] py-28 md:py-36">
+      <div className="absolute top-0 left-1/2 h-24 w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-slate-700 to-transparent" />
+      <div className="absolute right-0 top-1/4 h-[600px] w-[600px] rounded-full bg-blue-600/5 blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-1/4 left-0 h-[500px] w-[500px] rounded-full bg-violet-600/5 blur-[150px] pointer-events-none" />
 
       <div className="relative z-10 mx-auto max-w-7xl px-6">
-
-        <div ref={headingRef} className="text-center mb-20">
+        <div ref={headingRef} className="mb-20 text-center">
           <span className="text-xs font-bold uppercase tracking-widest text-blue-400">The Solution</span>
           <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
             Here's what each person gets
@@ -85,23 +81,22 @@ export default function Solution() {
               <div
                 key={s.who}
                 ref={cardRefs[idx]}
-                className={`group relative rounded-3xl border ${s.border} bg-slate-900/40 p-8 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900/60`}
+                className={`group relative rounded-3xl border ${s.border} bg-slate-900/45 p-8 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900/65`}
               >
-                {/* Gradient accent top bar */}
-                <div className={`absolute top-0 left-8 right-8 h-px bg-gradient-to-r ${s.color} opacity-50 group-hover:opacity-100 transition-opacity duration-300`} />
+                <div className={`absolute left-8 right-8 top-0 h-px bg-gradient-to-r ${s.color} opacity-50 transition-opacity duration-300 group-hover:opacity-100`} />
 
-                <div className={`w-14 h-14 rounded-2xl ${s.iconBg} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                <div className={`mb-6 flex h-14 w-14 items-center justify-center rounded-2xl ${s.iconBg} transition-transform duration-300 group-hover:scale-110`}>
                   <Icon size={26} className={s.iconColor} />
                 </div>
 
-                <p className={`text-xs font-bold uppercase tracking-widest ${s.iconColor} mb-2`}>{s.who}</p>
-                <h3 className="text-xl font-extrabold text-white mb-4">{s.tagline}</h3>
+                <p className={`mb-2 text-xs font-bold uppercase tracking-widest ${s.iconColor}`}>{s.who}</p>
+                <h3 className="mb-4 text-xl font-extrabold text-white">{s.tagline}</h3>
 
                 <ul className="space-y-3">
                   {s.perks.map((perk) => (
                     <li key={perk} className="flex items-start gap-3">
-                      <CheckCircle2 size={15} className={`${s.iconColor} shrink-0 mt-0.5`} />
-                      <span className="text-sm text-slate-300 leading-snug">{perk}</span>
+                      <CheckCircle2 size={15} className={`${s.iconColor} mt-0.5 shrink-0`} />
+                      <span className="text-sm leading-snug text-slate-300">{perk}</span>
                     </li>
                   ))}
                 </ul>

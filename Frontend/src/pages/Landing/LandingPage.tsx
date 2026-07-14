@@ -6,17 +6,9 @@ import HowItWorks from "../../components/landing/HowItWorks";
 import CTA from "../../components/landing/CTA";
 import Footer from "../../components/landing/Footer";
 
-/**
- * Story arc:
- * Hero       → "There's a gap between students and opportunity"
- * Problem    → "Students struggle. Recruiters are overwhelmed. Universities are blind."
- * Solution   → "SBridge fixes all three — here's what each person gets"
- * HowItWorks → "Three steps. That's it."
- * CTA        → "Join today"
- */
 export default function LandingPage() {
   return (
-    <div className="relative min-h-screen bg-[#020817] text-white overflow-x-hidden selection:bg-blue-600/40 selection:text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.12),_transparent_30%),linear-gradient(135deg,_#07111f_0%,_#0f172a_50%,_#111827_100%)] text-white selection:bg-violet-500/40 selection:text-white">
       <Navbar />
       <Hero />
       <main>

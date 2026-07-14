@@ -2,19 +2,20 @@ import React from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../context/AuthContext";
 import { useDashboard } from "../../context/DashboardContext";
-import { Briefcase, Users, UserCheck, Award, ChevronRight } from "lucide-react";
+import { Briefcase, Users, UserCheck, Award, ChevronRight, Sparkles } from "lucide-react";
 
 function useTheme() { return useDashboard().theme === "dark"; }
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const dark = useTheme();
   return (
-    <div className={`rounded-2xl transition-transform duration-200 transform hover:-translate-y-1 hover:shadow-2xl
+    <div className={`relative overflow-hidden rounded-[24px] border shadow-[0_20px_60px_-30px_rgba(15,23,42,0.35)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_-25px_rgba(16,185,129,0.28)]
       ${dark
-        ? "bg-gradient-to-br from-[#071024]/60 to-[#07122a]/40 border border-transparent ring-1 ring-white/6"
-        : "backdrop-blur-sm bg-white/60 border border-transparent ring-1 ring-black/6"
+        ? "bg-slate-900/70 border-slate-800/80"
+        : "bg-white/80 border-slate-200/80"
       } ${className}`}>
-      {children}
+      <div className={`pointer-events-none absolute inset-0 bg-linear-to-br ${dark ? "from-emerald-500/10 via-slate-900/40 to-transparent" : "from-emerald-100/70 via-white/50 to-transparent"}`} />
+      <div className="relative">{children}</div>
     </div>
   );
 }
@@ -25,7 +26,7 @@ function CardHeader({ title, action }: { title: string; action?: string }) {
     <div className="flex items-center justify-between mb-4">
       <p className={`text-sm font-bold ${dark ? "text-white" : "text-slate-800"}`}>{title}</p>
       {action && (
-        <button className="flex items-center gap-1 text-[10px] text-blue-500 font-semibold hover:underline">
+        <button className={`flex items-center gap-1 text-[10px] font-semibold hover:underline ${dark ? "text-emerald-300" : "text-emerald-600"}`}>
           {action} <ChevronRight size={10} />
         </button>
       )}
@@ -42,10 +43,6 @@ function StatCard({ title, value, subtitle, icon: Icon, iconBg, iconColor }:
         <p className={`text-xs font-semibold mb-1 ${dark ? "text-slate-300" : "text-slate-600"}`}>{title}</p>
         <p className={`text-3xl font-extrabold leading-none tabular-nums ${dark ? "text-white" : "text-slate-800"}`}>{value}</p>
         <p className={`text-[11px] font-medium mt-1.5 ${dark ? "text-slate-400" : "text-slate-500"}`}>{subtitle}</p>
-        <div className="mt-3 flex items-center gap-2">
-          <span className={`text-[11px] font-semibold text-green-400`}>+6.1%</span>
-          <span className={`text-[10px] ${dark ? "text-slate-500" : "text-slate-400"}`}>MoM</span>
-        </div>
       </div>
       <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${iconBg} drop-shadow-sm`}>
         <Icon size={24} className={iconColor} />
@@ -54,15 +51,18 @@ function StatCard({ title, value, subtitle, icon: Icon, iconBg, iconColor }:
   );
 }
 
+// ── Empty state ───────────────────────────────────────────────────────────────
+function EmptyState({ label }: { label: string }) {
+  const dark = useTheme();
+  return (
+    <p className={`text-[11px] text-center py-4 ${dark ? "text-slate-600" : "text-slate-400"}`}>
+      {label}
+    </p>
+  );
+}
+
 // ── Donut chart ───────────────────────────────────────────────────────────────
 interface Segment { label: string; value: number; pct: string; color: string; dot: string }
-
-const APP_SEGMENTS: Segment[] = [
-  { label: "New",          value: 45, pct: "29%", color: "#10b981", dot: "bg-emerald-500" },
-  { label: "Under Review", value: 47, pct: "30%", color: "#f97316", dot: "bg-orange-400"  },
-  { label: "Shortlisted",  value: 28, pct: "18%", color: "#3b82f6", dot: "bg-blue-500"    },
-  { label: "Rejected",     value: 14, pct: "9%",  color: "#ef4444", dot: "bg-red-500"     },
-];
 
 function DonutChart({ segments, total, centerValue, centerLabel }: {
   segments: Segment[]; total: number; centerValue: string | number; centerLabel: string;
@@ -168,23 +168,54 @@ function LineChart({ color }: { color: string }) {
 
 export default function CompanyDashboard() {
   const { user } = useAuth();
-  const dark = useTheme();
-  const raw  = user?.email?.split("@")[0] ?? "Alex";
-  const name = raw.charAt(0).toUpperCase() + raw.slice(1);
+  const { applicants, interns } = useDashboard();
+  const dark  = useTheme();
+  const raw   = user?.email?.split("@")[0] ?? "Alex";
+  const name  = raw.charAt(0).toUpperCase() + raw.slice(1);
+
+  // TODO: derive these counts from backend data (GET /api/company/stats)
+  const activePostings   = 0;
+  const totalApplicants  = applicants.length;
+  const activeInterns    = interns.length;
+  const completedInterns = 0;
+
+  // Derive application segments from context data
+  const appSegmentData = [
+    { label: "New",          value: applicants.filter(a => a.status === "New").length,          color: "#10b981", dot: "bg-emerald-500" },
+    { label: "Under Review", value: applicants.filter(a => a.status === "Under Review").length, color: "#f97316", dot: "bg-orange-400"  },
+    { label: "Shortlisted",  value: applicants.filter(a => a.status === "Shortlisted").length,  color: "#3b82f6", dot: "bg-blue-500"    },
+    { label: "Rejected",     value: applicants.filter(a => a.status === "Rejected").length,     color: "#ef4444", dot: "bg-red-500"     },
+  ];
+  const appSegments: Segment[] = applicants.length > 0
+    ? appSegmentData.map(s => ({ ...s, pct: `${Math.round((s.value / applicants.length) * 100)}%` }))
+    : [];
+
+  // Recent applicants — show latest 4
+  const recentApplicants = applicants.slice(0, 4);
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-5">
-        <div>
-          <h1 className={`text-2xl font-extrabold ${dark ? "text-white" : "text-slate-800"}`}>Welcome back, {name}! 👋</h1>
-          <p className={`text-sm mt-0.5 ${dark ? "text-slate-400" : "text-slate-500"}`}>Overview of your internship programs and candidates.</p>
-        </div>
+      <div className="max-w-6xl mx-auto">
+        <div className={`relative overflow-hidden rounded-[30px] border p-6 shadow-[0_24px_80px_-32px_rgba(16,185,129,0.35)] ${dark ? "border-emerald-500/15 bg-slate-900/70" : "border-emerald-200/70 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_30%),linear-gradient(135deg,_rgba(255,255,255,0.95)_0%,_rgba(240,253,244,0.95)_100%)]"}`}>
+          <div className={`pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(16,185,129,0.16),_transparent_26%)] ${dark ? "opacity-80" : "opacity-100"}`} />
+          <div className="relative space-y-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold ${dark ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-emerald-200 bg-emerald-50/80 text-emerald-700"}`}>
+                  <Sparkles size={13} />
+                  Recruiter workspace
+                </div>
+                <h1 className={`mt-3 text-2xl font-extrabold ${dark ? "text-white" : "text-slate-800"}`}>Welcome back, {name}! 👋</h1>
+                <p className={`mt-1 text-sm ${dark ? "text-slate-400" : "text-slate-500"}`}>Overview of your internship programs and candidates.</p>
+              </div>
+            </div>
 
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-          <StatCard title="Active Postings"   value={8}   subtitle="Total Jobs"        icon={Briefcase} iconBg="bg-green-50"  iconColor="text-green-500" />
-          <StatCard title="Total Applicants"  value={156} subtitle="This Month"        icon={Users}     iconBg="bg-blue-50"   iconColor="text-blue-500" />
-          <StatCard title="Active Interns"    value={24}  subtitle="Currently Working" icon={UserCheck} iconBg="bg-orange-50" iconColor="text-orange-500" />
-          <StatCard title="Completed Interns" value={36}  subtitle="This Year"         icon={Award}     iconBg="bg-green-50"  iconColor="text-green-500" />
+            {/* Stats — values come from backend */}
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+          <StatCard title="Active Postings"   value={activePostings}   subtitle="Total Jobs"        icon={Briefcase} iconBg="bg-green-50"  iconColor="text-green-500" />
+          <StatCard title="Total Applicants"  value={totalApplicants}  subtitle="This Month"        icon={Users}     iconBg="bg-blue-50"   iconColor="text-blue-500" />
+          <StatCard title="Active Interns"    value={activeInterns}    subtitle="Currently Working" icon={UserCheck} iconBg="bg-orange-50" iconColor="text-orange-500" />
+          <StatCard title="Completed Interns" value={completedInterns} subtitle="This Year"         icon={Award}     iconBg="bg-green-50"  iconColor="text-green-500" />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -192,38 +223,47 @@ export default function CompanyDashboard() {
           {/* Applications donut */}
           <Card className="p-5">
             <CardHeader title="Applications Overview" action="View All" />
-            <div className="flex flex-col items-center gap-4">
-              <DonutChart segments={APP_SEGMENTS} total={156} centerValue={156} centerLabel="Total" />
-              <div className="w-full space-y-1.5">
-                {APP_SEGMENTS.map(s => (
-                  <div key={s.label} className="flex items-center justify-between text-[10px]">
-                    <div className="flex items-center gap-1.5">
-                      <div className={`w-2 h-2 rounded-full ${s.dot} shrink-0`} />
-                      <span className={`font-medium ${dark ? "text-slate-400" : "text-slate-600"}`}>{s.label}</span>
-                    </div>
-                    <span className={`font-semibold tabular-nums ${dark ? "text-slate-400" : "text-slate-500"}`}>{s.value} ({s.pct})</span>
+            {appSegments.length === 0
+              ? <EmptyState label="No applications yet" />
+              : (
+                <div className="flex flex-col items-center gap-4">
+                  <DonutChart segments={appSegments} total={applicants.length} centerValue={applicants.length} centerLabel="Total" />
+                  <div className="w-full space-y-1.5">
+                    {appSegments.map(s => (
+                      <div key={s.label} className="flex items-center justify-between text-[10px]">
+                        <div className="flex items-center gap-1.5">
+                          <div className={`w-2 h-2 rounded-full ${s.dot} shrink-0`} />
+                          <span className={`font-medium ${dark ? "text-slate-400" : "text-slate-600"}`}>{s.label}</span>
+                        </div>
+                        <span className={`font-semibold tabular-nums ${dark ? "text-slate-400" : "text-slate-500"}`}>{s.value} ({s.pct})</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              )
+            }
           </Card>
 
           {/* Recent Applicants */}
           <Card className="p-5">
             <CardHeader title="Recent Applicants" />
-            <ApplicantRow idx={0} name="John Doe"    role="Frontend Developer Intern" time="5h ago" />
-            <ApplicantRow idx={1} name="Sarah Wilson" role="UI/UX Design Intern"       time="1d ago" />
-            <ApplicantRow idx={2} name="Mike Brown"  role="Backend Developer Intern"  time="1d ago" />
-            <ApplicantRow idx={3} name="Emily Davis" role="Data Analyst Intern"       time="2d ago" />
+            {recentApplicants.length === 0
+              ? <EmptyState label="No applicants yet" />
+              : recentApplicants.map((a, idx) => (
+                  <ApplicantRow key={a.id} idx={idx} name={a.name} role={a.role} time={a.appliedTime} />
+                ))
+            }
           </Card>
 
           {/* My Interns */}
           <Card className="p-5">
             <CardHeader title="My Interns" action="View All" />
-            <InternRow idx={0} name="David Lee"      dept="Software Engineering" performance="Good"      />
-            <InternRow idx={1} name="Jessica Taylor" dept="UI/UX Design"         performance="Excellent" />
-            <InternRow idx={2} name="Daniel Kim"     dept="Data Science"         performance="Good"      />
-            <InternRow idx={3} name="Sophia Martin"  dept="QA Engineering"       performance="Excellent" />
+            {interns.length === 0
+              ? <EmptyState label="No active interns yet" />
+              : interns.map((intern, idx) => (
+                  <InternRow key={intern.id} idx={idx} name={intern.name} dept={intern.role} performance={intern.performance} />
+                ))
+            }
           </Card>
 
           {/* Performance chart */}
@@ -243,6 +283,8 @@ export default function CompanyDashboard() {
               <div className="flex-1"><LineChart color="#10b981" /></div>
             </div>
           </Card>
+          </div>
+          </div>
         </div>
       </div>
     </DashboardLayout>

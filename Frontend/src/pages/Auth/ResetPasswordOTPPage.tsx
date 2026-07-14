@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../../assets/logo/sbridge-logo.png";
-import { Mail, ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowRight, ArrowLeft } from "lucide-react";
 import AuthLayout from "../../components/auth/AuthLayout";
 import { AuthCard, AuthButton } from "../../components/auth/AuthComponents";
 

@@ -15,9 +15,10 @@ const maxWidthClasses = {
 
 export default function AuthLayout({ children, maxWidth = "md" }: AuthLayoutProps) {
   return (
-    <div className="relative min-h-screen bg-[#020817] text-white flex items-center justify-center p-4 md:p-6 overflow-hidden selection:bg-blue-600/40">
-      <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-blue-900/10 blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-purple-900/10 blur-[150px] pointer-events-none" />
+    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_30%),linear-gradient(135deg,_#07111f_0%,_#0f172a_45%,_#111827_100%)] p-4 text-white md:p-6 flex items-center justify-center selection:bg-violet-500/40">
+      <div className="pointer-events-none absolute left-[-10%] top-[-15%] h-[45%] w-[45%] rounded-full bg-blue-500/12 blur-[140px]" />
+      <div className="pointer-events-none absolute bottom-[-15%] right-[-10%] h-[45%] w-[45%] rounded-full bg-emerald-500/12 blur-[140px]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(139,92,246,0.08),_transparent_35%)]" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}

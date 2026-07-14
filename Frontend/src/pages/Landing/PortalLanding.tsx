@@ -88,21 +88,19 @@ export default function PortalLanding({ portal = "student" }: PortalLandingProps
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-[#020817] text-white overflow-x-hidden selection:bg-blue-600/40">
-      {/* Ambient glow */}
-      <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full ${config.glow} blur-[120px] pointer-events-none opacity-60`} />
+    <div className="relative min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.14),_transparent_30%),linear-gradient(135deg,_#07111f_0%,_#0f172a_45%,_#111827_100%)] text-white selection:bg-violet-500/40">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(16,185,129,0.1),_transparent_20%),radial-gradient(circle_at_center_left,_rgba(139,92,246,0.12),_transparent_26%)]" />
+      <div className={`absolute left-1/2 top-0 h-[420px] w-[780px] -translate-x-1/2 rounded-full ${config.glow} blur-[140px] opacity-60 pointer-events-none`} />
 
-      {/* Minimal top nav */}
-      <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-7xl mx-auto">
+      <nav className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
         <img src={logo} alt="SBridge" className="h-10 w-auto select-none" />
-        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold ${config.badgeColor}`}>
+        <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold ${config.badgeColor}`}>
           <Icon size={12} />
           {config.label}
         </div>
       </nav>
 
-      {/* Hero */}
-      <div className="relative z-10 mx-auto max-w-7xl px-6 pt-16 pb-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 px-6 pb-24 pt-16 lg:grid-cols-2">
 
         {/* Left */}
         <div>
@@ -137,12 +135,12 @@ export default function PortalLanding({ portal = "student" }: PortalLandingProps
         </div>
 
         {/* Right: perks card */}
-        <div ref={cardRef} className={`rounded-3xl border ${config.border} bg-slate-900/50 p-8 backdrop-blur-sm`}>
-          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${config.color} flex items-center justify-center mb-6`}>
+        <div ref={cardRef} className={`rounded-3xl border ${config.border} bg-slate-900/55 p-8 shadow-[0_20px_70px_rgba(2,8,23,0.4)] backdrop-blur-xl`}>
+          <div className={`mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${config.color}`}>
             <Icon size={26} className="text-white" />
           </div>
-          <h3 className="text-xl font-extrabold text-white mb-2">What you get</h3>
-          <p className="text-sm text-slate-500 mb-6">Everything tailored for your role.</p>
+          <h3 className="mb-2 text-xl font-extrabold text-white">What you get</h3>
+          <p className="mb-6 text-sm text-slate-400">Everything tailored for your role.</p>
 
           <ul className="space-y-4">
             {config.perks.map((perk) => (

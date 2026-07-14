@@ -12,7 +12,7 @@ const PROBLEMS = [
     headline: "Lost in the process",
     description:
       "Students spend weeks chasing letters, emailing companies cold, and printing forms — only to find out a placement fell through two months in.",
-    color: "border-blue-500/30 bg-blue-500/5",
+    color: "border-blue-500/30 bg-blue-500/8",
     iconColor: "text-blue-400",
     glow: "from-blue-600/10",
   },
@@ -22,9 +22,9 @@ const PROBLEMS = [
     headline: "Buried in paperwork",
     description:
       "HR teams receive hundreds of unstructured CVs with no way to verify university eligibility, sign agreements digitally, or track intern progress.",
-    color: "border-amber-500/30 bg-amber-500/5",
-    iconColor: "text-amber-400",
-    glow: "from-amber-600/10",
+    color: "border-emerald-500/30 bg-emerald-500/8",
+    iconColor: "text-emerald-400",
+    glow: "from-emerald-600/10",
   },
   {
     icon: Building2,
@@ -32,9 +32,9 @@ const PROBLEMS = [
     headline: "Flying blind",
     description:
       "Coordinators have no real-time view of where students are placed, whether logbooks are being submitted, or if companies are meeting standards.",
-    color: "border-purple-500/30 bg-purple-500/5",
-    iconColor: "text-purple-400",
-    glow: "from-purple-600/10",
+    color: "border-violet-500/30 bg-violet-500/8",
+    iconColor: "text-violet-400",
+    glow: "from-violet-600/10",
   },
 ];
 
@@ -45,7 +45,6 @@ export default function Problem() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Heading
       gsap.fromTo(
         headingRef.current,
         { opacity: 0, y: 50 },
@@ -58,7 +57,6 @@ export default function Problem() {
         }
       );
 
-      // Cards stagger
       const cards = cardsRef.current?.querySelectorAll(".problem-card");
       if (cards) {
         gsap.fromTo(
@@ -80,60 +78,50 @@ export default function Problem() {
   }, []);
 
   return (
-    <section
-      id="problem"
-      ref={sectionRef}
-      className="relative bg-[#020817] py-28 md:py-36 overflow-hidden"
-    >
-      {/* Subtle separator line */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-24 bg-gradient-to-b from-transparent via-slate-700 to-transparent" />
-
-      <div className="absolute top-1/2 left-0 h-[500px] w-[500px] -translate-y-1/2 rounded-full bg-blue-600/5 blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-purple-600/5 blur-[150px] pointer-events-none" />
+    <section id="problem" ref={sectionRef} className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.08),_transparent_28%),linear-gradient(180deg,_#07111f_0%,_#0f172a_100%)] py-28 md:py-36">
+      <div className="absolute top-0 left-1/2 h-24 w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-slate-700 to-transparent" />
+      <div className="absolute left-0 top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full bg-blue-600/5 blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-violet-600/5 blur-[150px] pointer-events-none" />
 
       <div className="relative z-10 mx-auto max-w-7xl px-6">
-
-        {/* Section heading */}
-        <div ref={headingRef} className="text-center mb-20">
-          <span className="text-xs font-bold uppercase tracking-widest text-red-400">The Problem</span>
+        <div ref={headingRef} className="mb-20 text-center">
+          <span className="text-xs font-bold uppercase tracking-widest text-rose-400">The Problem</span>
           <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
             Students struggle. Recruiters are overwhelmed.
             <br />
-            <span className="text-slate-500">Universities are blind.</span>
+            <span className="text-slate-400">Universities are blind.</span>
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-base text-slate-400">
             The internship system is broken for everyone involved — not because people aren't trying, but because the tools were never built for this.
           </p>
         </div>
 
-        {/* Problem cards */}
         <div ref={cardsRef} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {PROBLEMS.map((p) => {
             const Icon = p.icon;
             return (
               <div
                 key={p.who}
-                className={`problem-card group relative rounded-3xl border ${p.color} p-8 transition-all duration-300 hover:-translate-y-1`}
+                className={`problem-card group relative rounded-3xl border ${p.color} p-8 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900/70`}
               >
-                <div className={`absolute inset-0 -z-10 rounded-3xl bg-gradient-to-br ${p.glow} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                <div className={`absolute inset-0 -z-10 rounded-3xl bg-gradient-to-br ${p.glow} to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100`} />
 
-                <div className={`inline-flex items-center gap-2 rounded-full border border-current/20 px-3 py-1 mb-5 ${p.iconColor} text-xs font-bold`}>
+                <div className={`mb-5 inline-flex items-center gap-2 rounded-full border border-current/20 px-3 py-1 text-xs font-bold ${p.iconColor}`}>
                   <Icon size={13} />
                   {p.who}
                 </div>
 
-                <h3 className="text-2xl font-extrabold text-white mb-3">{p.headline}</h3>
-                <p className="text-sm text-slate-400 leading-relaxed">{p.description}</p>
+                <h3 className="mb-3 text-2xl font-extrabold text-white">{p.headline}</h3>
+                <p className="text-sm leading-relaxed text-slate-400">{p.description}</p>
               </div>
             );
           })}
         </div>
 
-        {/* Bridge line into next section */}
         <div className="mt-24 text-center">
           <p className="text-lg font-semibold text-slate-400">
             SBridge fixes all three —
-            <span className="text-white font-extrabold"> here's how.</span>
+            <span className="font-extrabold text-white"> here's how.</span>
           </p>
         </div>
       </div>

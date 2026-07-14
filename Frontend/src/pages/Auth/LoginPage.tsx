@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import logo from "../../assets/logo/sbridge-logo.png";
 import { GraduationCap, Building2, Briefcase, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import AuthLayout from "../../components/auth/AuthLayout";
-import { AuthCard, AuthInput, AuthButton } from "../../components/auth/AuthComponents";
+import { AuthCard, AuthInput, AuthButton, AuthDivider, SocialAuthButtons } from "../../components/auth/AuthComponents";
 import { getActivePortal, getDefaultRole, roleConfig } from "../../components/auth/authUtils";
 
 export default function LoginPage() {
@@ -145,7 +145,10 @@ export default function LoginPage() {
           </AuthButton>
         </form>
 
-        <div className="text-center mt-6 space-y-3">
+        <AuthDivider />
+        <SocialAuthButtons />
+
+        <div className="text-center mt-5 space-y-3">
           <p className="text-xs font-semibold text-slate-400">
             Don&apos;t have an account?{" "}
             <Link to="/signup" className={`${config.text} hover:underline font-bold`}>

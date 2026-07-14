@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../context/AuthContext";
 import { useDashboard } from "../../context/DashboardContext";
-import { LayoutGrid, Clock, CheckCircle2, XCircle, ChevronRight, Check, Calendar } from "lucide-react";
+import { LayoutGrid, Clock, CheckCircle2, XCircle, ChevronRight, Check, Calendar, Sparkles } from "lucide-react";
 
 // ── Theme-aware helpers ───────────────────────────────────────────────────────
 function useTheme() { return useDashboard().theme === "dark"; }
@@ -10,12 +10,13 @@ function useTheme() { return useDashboard().theme === "dark"; }
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const dark = useTheme();
   return (
-    <div className={`rounded-2xl transition-transform duration-200 transform hover:-translate-y-1 hover:shadow-2xl
+    <div className={`relative overflow-hidden rounded-3xl border shadow-[0_20px_60px_-30px_rgba(15,23,42,0.35)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_-25px_rgba(59,130,246,0.28)]
       ${dark
-        ? "bg-gradient-to-br from-[#071024]/60 to-[#07122a]/40 border border-transparent ring-1 ring-white/6"
-        : "backdrop-blur-sm bg-white/60 border border-transparent ring-1 ring-black/6"
+        ? "bg-slate-900/70 border-slate-800/80"
+        : "bg-white/80 border-slate-200/80"
       } ${className}`}>
-      {children}
+      <div className={`pointer-events-none absolute inset-0 bg-linear-to-br ${dark ? "from-blue-500/10 via-slate-900/40 to-transparent" : "from-blue-100/70 via-white/50 to-transparent"}`} />
+      <div className="relative">{children}</div>
     </div>
   );
 }
@@ -30,6 +31,16 @@ function Muted({ children, className = "" }: { children: React.ReactNode; classN
   return <p className={`${dark ? "text-slate-500" : "text-slate-400"} ${className}`}>{children}</p>;
 }
 
+// ── Empty state ───────────────────────────────────────────────────────────────
+function EmptyState({ label }: { label: string }) {
+  const dark = useTheme();
+  return (
+    <p className={`text-[11px] text-center py-4 ${dark ? "text-slate-600" : "text-slate-400"}`}>
+      {label}
+    </p>
+  );
+}
+
 // ── Stat card ─────────────────────────────────────────────────────────────────
 function StatCard({ title, value, subtitle, icon: Icon, iconBg, iconColor }:
   { title: string; value: string | number; subtitle: string; icon: React.ElementType; iconBg: string; iconColor: string }) {
@@ -40,10 +51,6 @@ function StatCard({ title, value, subtitle, icon: Icon, iconBg, iconColor }:
         <Muted className="text-xs font-semibold mb-1">{title}</Muted>
         <p className={`text-3xl font-extrabold leading-none tabular-nums ${dark ? "text-white" : "text-slate-800"}`}>{value}</p>
         <Muted className="text-[11px] font-medium mt-1.5">{subtitle}</Muted>
-        <div className="mt-3 flex items-center gap-2">
-          <span className={`text-[11px] font-semibold text-green-400`}>+2.8%</span>
-          <span className={`text-[10px] ${dark ? "text-slate-500" : "text-slate-400"}`}>since last week</span>
-        </div>
       </div>
       <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${iconBg} drop-shadow-sm`}>
         <Icon size={24} className={iconColor} />
@@ -53,21 +60,17 @@ function StatCard({ title, value, subtitle, icon: Icon, iconBg, iconColor }:
 }
 
 // ── Application stepper ───────────────────────────────────────────────────────
-const STEPS = [
-  { label: "Applied",      date: "May 19", done: true },
-  { label: "Under Review", date: "May 12", done: true },
-  { label: "Interview",    date: "May 19", done: false },
-  { label: "Offered",      date: "May 20", done: false },
-];
+interface Step { label: string; date: string; done: boolean }
 
-function ApplicationStepper() {
+function ApplicationStepper({ steps }: { steps: Step[] }) {
   const dark = useTheme();
+  if (steps.length === 0) return <EmptyState label="No active application" />;
   return (
     <div className="flex items-start w-full pt-2 pb-1">
-      {STEPS.map((step, i) => (
+      {steps.map((step, i) => (
         <React.Fragment key={step.label}>
           {i > 0 && (
-            <div className={`flex-1 h-0.5 mt-4 mx-1 ${STEPS[i - 1].done ? "bg-blue-400" : (dark ? "bg-slate-700" : "bg-slate-200")}`} />
+            <div className={`flex-1 h-0.5 mt-4 mx-1 ${steps[i - 1].done ? "bg-blue-400" : (dark ? "bg-slate-700" : "bg-slate-200")}`} />
           )}
           <div className="flex flex-col items-center shrink-0">
             <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center
@@ -170,29 +173,47 @@ function MiniCalendar() {
 // ── Main ─────────────────────────────────────────────────────────────────────
 export default function StudentDashboard() {
   const { user } = useAuth();
-  const dark = useTheme();
-  const raw  = user?.email?.split("@")[0] ?? "Student";
+  const { tasks, studentMessages } = useDashboard();
+  const dark  = useTheme();
+  const raw   = user?.email?.split("@")[0] ?? "Student";
   const displayName = raw.charAt(0).toUpperCase() + raw.slice(1);
+
+  // TODO: derive these counts from backend data (GET /api/student/applications/stats)
+  const totalApplications = 0;
+  const underReview = 0;
+  const accepted = 0;
+  const rejected = 0;
+
+  // TODO: fetch application steps from GET /api/student/applications/latest
+  const applicationSteps: { label: string; date: string; done: boolean }[] = [];
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-5">
-        {/* Welcome */}
-        <div>
-          <h1 className={`text-2xl font-extrabold ${dark ? "text-white" : "text-slate-800"}`}>
-            Welcome back, {displayName}! 👋
-          </h1>
-          <p className={`text-sm mt-0.5 ${dark ? "text-slate-400" : "text-slate-500"}`}>
-            Here's what's happening with your internship journey.
-          </p>
-        </div>
+      <div className="max-w-6xl mx-auto">
+        <div className={`relative overflow-hidden rounded-[30px] border p-6 shadow-[0_24px_80px_-32px_rgba(37,99,235,0.35)] ${dark ? "border-blue-500/15 bg-slate-900/70" : "border-blue-200/70 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.95)_0%,rgba(239,246,255,0.95)_100%)]"}`}>
+          <div className={`pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.16),transparent_26%)] ${dark ? "opacity-80" : "opacity-100"}`} />
+          <div className="relative space-y-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold ${dark ? "border-blue-500/20 bg-blue-500/10 text-blue-300" : "border-blue-200 bg-blue-50/80 text-blue-700"}`}>
+                  <Sparkles size={13} />
+                  Student experience
+                </div>
+                <h1 className={`mt-3 text-2xl font-extrabold ${dark ? "text-white" : "text-slate-800"}`}>
+                  Welcome back, {displayName}! 👋
+                </h1>
+                <p className={`mt-1 text-sm ${dark ? "text-slate-400" : "text-slate-500"}`}>
+                  Here's what's happening with your internship journey.
+                </p>
+              </div>
+            </div>
 
-        {/* Stats */}
+        {/* Stats — values come from backend */}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-          <StatCard title="Applications"  value={5} subtitle="Total Applied"    icon={LayoutGrid}  iconBg="bg-blue-50"   iconColor="text-blue-500" />
-          <StatCard title="Under Review"  value={2} subtitle="In Progress"      icon={Clock}       iconBg="bg-orange-50" iconColor="text-orange-500" />
-          <StatCard title="Accepted"      value={1} subtitle="Congratulations!" icon={CheckCircle2} iconBg="bg-green-50"  iconColor="text-green-500" />
-          <StatCard title="Rejected"      value={2} subtitle="Keep Trying"      icon={XCircle}     iconBg="bg-red-50"    iconColor="text-red-500" />
+          <StatCard title="Applications"  value={totalApplications} subtitle="Total Applied"    icon={LayoutGrid}  iconBg="bg-blue-50"   iconColor="text-blue-500" />
+          <StatCard title="Under Review"  value={underReview}       subtitle="In Progress"      icon={Clock}       iconBg="bg-orange-50" iconColor="text-orange-500" />
+          <StatCard title="Accepted"      value={accepted}          subtitle="Congratulations!" icon={CheckCircle2} iconBg="bg-green-50"  iconColor="text-green-500" />
+          <StatCard title="Rejected"      value={rejected}          subtitle="Keep Trying"      icon={XCircle}     iconBg="bg-red-50"    iconColor="text-red-500" />
         </div>
 
         {/* Four panels */}
@@ -202,20 +223,21 @@ export default function StudentDashboard() {
           <Card className="p-5">
             <div className="flex items-center justify-between mb-3">
               <Heading>Application Status</Heading>
-              <button className="text-[10px] text-blue-500 font-semibold hover:underline whitespace-nowrap">
+              <button className={`text-[10px] font-semibold hover:underline whitespace-nowrap ${dark ? "text-blue-300" : "text-blue-600"}`}>
                 View All Applications
               </button>
             </div>
-            <ApplicationStepper />
+            <ApplicationStepper steps={applicationSteps} />
           </Card>
 
           {/* Upcoming Tasks */}
           <Card className="p-5">
             <Heading>Upcoming Tasks</Heading>
             <div className="mt-3 space-y-0">
-              <TaskRow title="Upload Weekly Report" due="Due in 2 days" />
-              <TaskRow title="Submit Logbook"       due="Due in 5 days" />
-              <TaskRow title="Evaluation Form"      due="Due in 10 days" />
+              {tasks.length === 0
+                ? <EmptyState label="No upcoming tasks" />
+                : tasks.map(t => <TaskRow key={t.id} title={t.title} due={t.dueDate} />)
+              }
             </div>
           </Card>
 
@@ -223,23 +245,28 @@ export default function StudentDashboard() {
           <Card className="p-5">
             <div className="flex items-center justify-between mb-3">
               <Heading>Messages</Heading>
-              <button className="text-[10px] text-blue-500 font-semibold hover:underline">View All</button>
+              <button className={`text-[10px] font-semibold hover:underline ${dark ? "text-blue-300" : "text-blue-600"}`}>View All</button>
             </div>
             <div className="space-y-0">
-              <MessageRow idx={0} name="ABC Corp HR"            preview="Your application status update"  time="2h ago" />
-              <MessageRow idx={1} name="University Coordinator" preview="Regarding your internship..."     time="1d ago" />
-              <MessageRow idx={2} name="Tech Solutions Ltd."    preview="Interview invitation"             time="2d ago" />
+              {studentMessages.length === 0
+                ? <EmptyState label="No messages yet" />
+                : studentMessages.map((m, idx) => (
+                    <MessageRow key={m.id} idx={idx} name={m.sender} preview={m.content} time={m.time} />
+                  ))
+              }
             </div>
           </Card>
 
           {/* Calendar */}
           <Card className="p-5">
             <div className={`flex items-center gap-2 mb-4`}>
-              <Calendar size={15} className="text-blue-500" />
+              <Calendar size={15} className={dark ? "text-blue-300" : "text-blue-600"} />
               <Heading>Calendar</Heading>
             </div>
             <MiniCalendar />
           </Card>
+            </div>
+          </div>
         </div>
       </div>
     </DashboardLayout>
