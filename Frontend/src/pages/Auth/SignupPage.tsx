@@ -249,7 +249,7 @@ export default function SignupPage() {
     <AuthLayout maxWidth={step === 1 && activePortal === "main" ? "lg" : "md"}>
       <div className="flex flex-col items-center text-center mb-6">
         <img src={logo} alt="SBridge Logo" className="h-10 w-auto mb-3 select-none" />
-        <h2 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+        <h2 className="text-xl font-extrabold tracking-tight bg-linear-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
           Create your SBridge Account
         </h2>
         <p className="text-xs text-slate-400 font-medium mt-1">

@@ -32,7 +32,12 @@ const TESTIMONIALS = [
 export default function Testimonials() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [direction, setDirection] = useState(0); // -1 for left, 1 for right
-
+  
+  const handleNext = () => {
+    setDirection(1);
+    setActiveIndex((prev) => (prev === TESTIMONIALS.length - 1 ? 0 : prev + 1));
+  };
+  
   useEffect(() => {
     const timer = setInterval(() => {
       handleNext();
@@ -45,10 +50,6 @@ export default function Testimonials() {
     setActiveIndex((prev) => (prev === 0 ? TESTIMONIALS.length - 1 : prev - 1));
   };
 
-  const handleNext = () => {
-    setDirection(1);
-    setActiveIndex((prev) => (prev === TESTIMONIALS.length - 1 ? 0 : prev + 1));
-  };
 
   const slideVariants = {
     enter: (dir: number) => ({
