@@ -15,7 +15,7 @@ interface AuthContextType {
   isLoading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<AuthUser>;
-  register: (email: string, password: string, role: UserRole, studentId?: string, indexNumber?: string) => Promise<void>;
+  register: (email: string, password: string, role: UserRole, profileData: any) => Promise<void>;
   logout: () => void;
   clearError: () => void;
 }
@@ -72,13 +72,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (email: string, password: string, role: UserRole, studentId?: string, indexNumber?: string) => {
+  const register = async (email: string, password: string, role: UserRole, profileData: any = {}) => {
     setIsLoading(true);
     setError(null);
     try {
       // Backend expects uppercase role: "STUDENT", "RECRUITER", "UNIVERSITY"
       const backendRole = role.toUpperCase();
-      await api.post("/api/auth/register", { email, password, role: backendRole, studentId, indexNumber });
+      await api.post("/api/auth/register", { email, password, role: backendRole, ...profileData });
     } catch (err: any) {
       const message = err.response?.data?.message || "Registration failed. Please try again.";
       setError(message);

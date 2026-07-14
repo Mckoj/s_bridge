@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-
 }
 
 enum Role {
@@ -14,20 +13,218 @@ enum Role {
   ADMIN
 }
 
+enum ApplicationStatus {
+  PENDING
+  REVIEWING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum InternshipStatus {
+  OPEN
+  CLOSED
+  EXPIRED
+}
+
+enum ReportStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  APPLICATION
+  MATCH
+  REPORT
+  SYSTEM
+}
+
 model User {
   id                      String                    @id @default(uuid())
   email                   String                    @unique
   passwordHash            String
   role                    Role                      @default(STUDENT)
   isVerified              Boolean                   @default(false)
-  studentId               String?                   @unique
-  indexNumber             String?                   @unique
   createdAt               DateTime                  @default(now())
   updatedAt               DateTime                  @updatedAt
+  student                 Student?
+  recruiter               Recruiter?
+  university              University?
+  notifications           Notification[]
   emailVerificationTokens EmailVerificationToken[]
   passwordResetTokens     PasswordResetToken[]
 
   @@index([email])
+}
+
+model Student {
+  id            String         @id @default(uuid())
+  userId        String         @unique
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName     String
+  lastName      String
+  studentId     String?        @unique
+  indexNumber   String?        @unique
+  phone         String?
+  gpa           Float?
+  programme     String?
+  experience    String?        @db.Text
+  cvUrl         String?
+  profilePicUrl String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  skills        StudentSkill[]
+  applications  Application[]
+  reports       Report[]
+
+  @@index([userId])
+}
+
+model Recruiter {
+  id             String          @id @default(uuid())
+  userId         String          @unique
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName    String
+  companyWebsite String?
+  position       String?
+  isApproved     Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  internships    Internship[]
+  companyProfile CompanyProfile?
+
+  @@index([userId])
+}
+
+model University {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  universityName String
+  domain         String   @unique
+  contactEmail   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model CompanyProfile {
+  id          String    @id @default(uuid())
+  recruiterId String    @unique
+  recruiter   Recruiter @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+  description String?   @db.Text
+  logoUrl     String?
+  industry    String?
+  size        String?
+  address     String?
+  website     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Internship {
+  id               String            @id @default(uuid())
+  recruiterId      String
+  recruiter        Recruiter         @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+  title            String
+  description      String            @db.Text
+  location         String
+  internshipType   String // e.g. REMOTE, HYBRID, ON_SITE
+  salary           Float?
+  duration         String // e.g. 3 Months, 6 Months
+  status           InternshipStatus  @default(OPEN)
+  targetProgrammes String? // Stored as comma-separated or JSON list
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  skills           InternshipSkill[]
+  applications     Application[]
+  reports          Report[]
+
+  @@index([recruiterId])
+  @@index([status])
+}
+
+model Skill {
+  id          String            @id @default(uuid())
+  name        String            @unique
+  createdAt   DateTime          @default(now())
+  students    StudentSkill[]
+  internships InternshipSkill[]
+
+  @@index([name])
+}
+
+model StudentSkill {
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  skillId   String
+  skill     Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([studentId, skillId])
+}
+
+model InternshipSkill {
+  id           String     @id @default(uuid())
+  internshipId String
+  internship   Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  skillId      String
+  skill        Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([internshipId, skillId])
+}
+
+model Application {
+  id           String            @id @default(uuid())
+  studentId    String
+  student      Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  internshipId String
+  internship   Internship        @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  status       ApplicationStatus @default(PENDING)
+  coverLetter  String?           @db.Text
+  resumeUrl    String?
+  matchScore   Float             @default(0.0)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([studentId])
+  @@index([internshipId])
+  @@index([status])
+}
+
+model Report {
+  id           String       @id @default(uuid())
+  studentId    String
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  internshipId String
+  internship   Internship   @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  title        String
+  fileUrl      String
+  status       ReportStatus @default(PENDING)
+  comment      String?      @db.Text
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([studentId])
+  @@index([internshipId])
+  @@index([status])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([isRead])
 }
 
 model PasswordResetToken {

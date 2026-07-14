@@ -45,13 +45,29 @@ export default function SignupPage() {
     e.preventDefault();
     clearError();
     try {
-      await register(
-        formData.email,
-        formData.password,
-        selectedRole,
-        selectedRole === "student" ? formData.studentId : undefined,
-        selectedRole === "student" ? formData.indexNumber : undefined
-      );
+      let profileData: any = {};
+      if (selectedRole === "student") {
+        const nameParts = formData.name.trim().split(" ");
+        const firstName = nameParts[0] || "";
+        const lastName = nameParts.slice(1).join(" ") || "Student";
+        profileData = {
+          firstName,
+          lastName,
+          studentId: formData.studentId,
+          indexNumber: formData.indexNumber,
+          programme: formData.department,
+        };
+      } else if (selectedRole === "recruiter") {
+        profileData = {
+          companyName: formData.orgName,
+        };
+      } else if (selectedRole === "university") {
+        profileData = {
+          universityName: formData.orgName,
+          domain: formData.email.split("@")[1] || "",
+        };
+      }
+      await register(formData.email, formData.password, selectedRole, profileData);
       navigate("/signup-successful", { state: { email: formData.email, role: selectedRole } });
     } catch {
       // error is already set in AuthContext

@@ -8,8 +8,8 @@ const register = async (req, res) => {
         if (!req.body) {
             return res.status(400).json({ message: 'Request body is missing. Make sure Content-Type is application/json' });
         }
-        const { email, password, role, studentId, indexNumber } = req.body;
-        const user = await authService.register(email, password, role, studentId, indexNumber);
+        const { email, password, role, ...profileData } = req.body;
+        const user = await authService.register(email, password, role, profileData);
         res.status(201).json({ message: 'User registered successfully', user });
     } catch (error) {
         res.status(400).json({ message: error.message });
