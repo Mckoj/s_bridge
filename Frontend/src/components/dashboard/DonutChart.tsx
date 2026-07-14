@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 interface ChartDataPoint {
   label: string;
@@ -38,7 +38,6 @@ export default function DonutChart({ data, centerTitle, centerSubtitle }: DonutC
           {data.map((item, idx) => {
             const percentage = total > 0 ? item.value / total : 0;
             const strokeLength = percentage * circumference;
-            const strokeOffset = circumference - strokeLength;
             const rotation = accumulatedPercentage * 360;
             
             // Advance cumulative count

@@ -10,21 +10,21 @@ export default function PasswordResetSuccessfulPage() {
   return (
     <AuthLayout>
       <AuthCard className="text-center">
-        <div className="flex flex-col items-center mb-6">
-          <img src={logo} alt="SBridge Logo" className="h-10 w-auto mb-4 select-none" />
+        <div className="mb-6 flex flex-col items-center">
+          <img src={logo} alt="SBridge Logo" className="mb-4 h-10 w-auto select-none" />
 
-          <div className="p-4 rounded-full bg-emerald-600/10 mb-4">
+          <div className="mb-4 rounded-full bg-emerald-600/10 p-4">
             <CheckCircle2 size={40} className="text-emerald-400" />
           </div>
 
-          <h2 className="text-xl font-extrabold tracking-tight">Password Reset Complete</h2>
-          <p className="text-xs text-slate-400 font-medium mt-2 max-w-xs">
+          <h2 className="text-xl font-extrabold tracking-tight text-white">Password Reset Complete</h2>
+          <p className="mt-2 max-w-xs text-xs font-medium text-slate-400">
             Your password has been updated successfully. You can now sign in with your new
             credentials.
           </p>
         </div>
 
-        <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 mb-6">
+        <div className="mb-6 rounded-2xl border border-slate-800/80 bg-slate-950/70 p-4">
           <p className="text-[10px] text-slate-400 font-medium">
             For security, you&apos;ve been signed out of all other devices. Use your new password
             on your next login.

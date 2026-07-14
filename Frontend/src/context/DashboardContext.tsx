@@ -58,22 +58,22 @@ interface DashboardContextType {
   setRole: (role: UserRole) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  
+
   // Student Dashboard State
   tasks: TaskItem[];
   toggleTask: (id: string) => void;
   studentMessages: MessageItem[];
-  
+
   // University Dashboard State
   approvals: ApprovalItem[];
   handleApproval: (id: string, action: "Approved" | "Rejected") => void;
   activities: ActivityItem[];
-  
+
   // Company Dashboard State
   applicants: ApplicantItem[];
   handleApplicant: (id: string, action: "Under Review" | "Shortlisted" | "Rejected" | "Offered") => void;
   interns: InternItem[];
-  
+
   // General Notifications
   notifications: { id: string; text: string; time: string; read: boolean }[];
   markAllNotificationsRead: () => void;
@@ -86,11 +86,11 @@ const getActivePortalRole = (): UserRole => {
   const hostname = window.location.hostname;
   const params = new URLSearchParams(window.location.search);
   const override = params.get("portal");
-  
+
   if (override === "student" || hostname.startsWith("student.")) return "student";
   if (override === "university" || hostname.startsWith("university.")) return "university";
   if (override === "recruiter" || override === "company" || hostname.startsWith("recruiter.") || hostname.startsWith("company.")) return "recruiter";
-  
+
   return (localStorage.getItem("dashboard_role") as UserRole) || "student";
 };
 
@@ -126,12 +126,9 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
   };
 
-  // Student specific state
-  const [tasks, setTasks] = useState<TaskItem[]>([
-    { id: "t1", title: "Upload Weekly Report", dueDate: "Due in 2 days", completed: false },
-    { id: "t2", title: "Submit Logbook", dueDate: "Due in 5 days", completed: false },
-    { id: "t3", title: "Evaluation Form", dueDate: "Due in 10 days", completed: false },
-  ]);
+  // ── Student state ───────────────────────────────────────────────────────────
+  // TODO: fetch tasks from GET /api/student/tasks
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
 
   const toggleTask = (id: string) => {
     setTasks((prev) =>
@@ -139,64 +136,15 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
   };
 
-  const [studentMessages] = useState<MessageItem[]>([
-    {
-      id: "m1",
-      sender: "ABC Corp HR",
-      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
-      content: "Your application status update",
-      time: "2h ago",
-    },
-    {
-      id: "m2",
-      sender: "University Coordinator",
-      avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
-      content: "Regarding your internship agreement",
-      time: "1d ago",
-    },
-    {
-      id: "m3",
-      sender: "Tech Solutions Ltd.",
-      avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150",
-      content: "Interview Invitation for Frontend Role",
-      time: "2d ago",
-    },
-  ]);
+  // TODO: fetch messages from GET /api/student/messages
+  const [studentMessages] = useState<MessageItem[]>([]);
 
-  // University specific state
-  const [approvals, setApprovals] = useState<ApprovalItem[]>([
-    {
-      id: "a1",
-      studentName: "John Doe",
-      avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150",
-      type: "Report Submission - Week 4",
-      submittedTime: "2 hours ago",
-      status: "Pending",
-    },
-    {
-      id: "a2",
-      studentName: "Sarah Wilson",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-      type: "Internship Request: InnovateX",
-      submittedTime: "5 hours ago",
-      status: "Pending",
-    },
-    {
-      id: "a3",
-      studentName: "Mike Brown",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
-      type: "Company Agreement Approval",
-      submittedTime: "1 day ago",
-      status: "Pending",
-    },
-  ]);
+  // ── University state ────────────────────────────────────────────────────────
+  // TODO: fetch approvals from GET /api/university/approvals
+  const [approvals, setApprovals] = useState<ApprovalItem[]>([]);
 
-  const [activities, setActivities] = useState<ActivityItem[]>([
-    { id: "ac1", user: "John Doe", action: "submitted a report", time: "2 hours ago", type: "report" },
-    { id: "ac2", user: "Sarah Wilson", action: "completed internship", time: "5 hours ago", type: "completion" },
-    { id: "ac3", user: "Mike Brown", action: "application approved", time: "1 day ago", type: "approval" },
-    { id: "ac4", user: "Emily Davis", action: "report approved", time: "2 days ago", type: "approval" },
-  ]);
+  // TODO: fetch activities from GET /api/university/activities
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
 
   const handleApproval = (id: string, action: "Approved" | "Rejected") => {
     const item = approvals.find((a) => a.id === id);
@@ -226,72 +174,12 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     ]);
   };
 
-  // Company specific state
-  const [applicants, setApplicants] = useState<ApplicantItem[]>([
-    {
-      id: "ap1",
-      name: "John Doe",
-      avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150",
-      role: "Frontend Developer Intern",
-      appliedTime: "2h ago",
-      status: "New",
-    },
-    {
-      id: "ap2",
-      name: "Sarah Wilson",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-      role: "UI/UX Design Intern",
-      appliedTime: "5h ago",
-      status: "Under Review",
-    },
-    {
-      id: "ap3",
-      name: "Mike Brown",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
-      role: "Backend Developer Intern",
-      appliedTime: "1d ago",
-      status: "Shortlisted",
-    },
-    {
-      id: "ap4",
-      name: "Emily Davis",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150",
-      role: "Data Analyst Intern",
-      appliedTime: "2d ago",
-      status: "New",
-    },
-  ]);
+  // ── Company state ───────────────────────────────────────────────────────────
+  // TODO: fetch applicants from GET /api/company/applicants
+  const [applicants, setApplicants] = useState<ApplicantItem[]>([]);
 
-  const [interns] = useState<InternItem[]>([
-    {
-      id: "in1",
-      name: "David Lee",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
-      role: "Software Engineering",
-      performance: "Good",
-    },
-    {
-      id: "in2",
-      name: "Jessica Taylor",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-      role: "UI/UX Design",
-      performance: "Excellent",
-    },
-    {
-      id: "in3",
-      name: "Daniel Kim",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
-      role: "Data Science",
-      performance: "Good",
-    },
-    {
-      id: "in4",
-      name: "Sophia Martin",
-      avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
-      role: "QA Engineering",
-      performance: "Excellent",
-    },
-  ]);
+  // TODO: fetch interns from GET /api/company/interns
+  const [interns] = useState<InternItem[]>([]);
 
   const handleApplicant = (id: string, action: "Under Review" | "Shortlisted" | "Rejected" | "Offered") => {
     const applicant = applicants.find((a) => a.id === id);
@@ -312,12 +200,9 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     ]);
   };
 
-  // General Notification System state
-  const [notifications, setNotifications] = useState([
-    { id: "n1", text: "New report submission pending review", time: "10 mins ago", read: false },
-    { id: "n2", text: "Interview scheduled with John Doe", time: "1 hour ago", read: false },
-    { id: "n3", text: "System maintenance scheduled for tonight at 12 AM", time: "4 hours ago", read: true },
-  ]);
+  // ── Notifications ───────────────────────────────────────────────────────────
+  // TODO: fetch notifications from GET /api/notifications
+  const [notifications, setNotifications] = useState<{ id: string; text: string; time: string; read: boolean }[]>([]);
 
   const markAllNotificationsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));

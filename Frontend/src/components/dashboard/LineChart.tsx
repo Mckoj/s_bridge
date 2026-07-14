@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
 
 interface LineChartProps {
   data: number[];
@@ -7,7 +7,7 @@ interface LineChartProps {
   height?: number;
 }
 
-export default function LineChart({ data, labels, color, height = 200 }: LineChartProps) {
+export default function LineChart({ data, labels, color }: LineChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
