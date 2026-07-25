@@ -2,10 +2,13 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import api from "../services/api";
 import type { UserRole } from "./DashboardContext";
 
-interface AuthUser {
+export interface AuthUser {
   id: string;
   email: string;
   role: string;
+  firstName?: string;
+  lastName?: string;
+  profilePicUrl?: string;
 }
 
 interface AuthContextType {
@@ -18,6 +21,7 @@ interface AuthContextType {
   register: (email: string, password: string, role: UserRole, profileData: any) => Promise<void>;
   logout: () => void;
   clearError: () => void;
+  updateUser: (data: Partial<AuthUser>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -76,7 +80,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     setError(null);
     try {
-      // Backend expects uppercase role: "STUDENT", "RECRUITER", "UNIVERSITY"
       const backendRole = role.toUpperCase();
       await api.post("/api/auth/register", { email, password, role: backendRole, ...profileData });
     } catch (err: any) {
@@ -97,6 +100,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearError = () => setError(null);
 
+  const updateUser = (data: Partial<AuthUser>) => {
+    setUser((prev) => (prev ? { ...prev, ...data } : null));
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -109,6 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         logout,
         clearError,
+        updateUser,
       }}
     >
       {children}
