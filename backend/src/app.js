@@ -5,6 +5,7 @@ const morgan = require('morgan');
 const authRoutes = require('./routes/authRoute');
 const studentRoutes = require('./routes/studentRoute');
 const recruiterRoutes = require('./routes/recruiterRoute');
+const applicationRoutes = require('./routes/applicationRoute');
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/recruiters', recruiterRoutes);
+app.use('/api/applications', applicationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
