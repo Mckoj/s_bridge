@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDashboard } from "../context/DashboardContext";
 import { useAuth } from "../context/AuthContext";
@@ -6,7 +6,7 @@ import logo from "../assets/logo/sbridge-logo.png";
 import {
   LayoutDashboard, Bell, Search, LogOut, Menu, X,
   FileText, Briefcase, BarChart2, MessageSquare, Settings,
-  User, Users, CheckSquare, Sun, Moon,
+  User, Users, CheckSquare, Sun, Moon, ChevronDown,
   PlusSquare, ClipboardList,
 } from "lucide-react";
 
@@ -50,31 +50,62 @@ const roleAccent = {
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { role, theme, toggleTheme, notifications, markAllNotificationsRead } = useDashboard();
+  const {
+    role,
+    theme,
+    toggleTheme,
+    notifications,
+    markAllNotificationsRead,
+    searchQuery,
+    setSearchQuery,
+  } = useDashboard();
   const { user, logout } = useAuth();
   const navigate  = useNavigate();
   const location  = useLocation();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen,   setNotifOpen]   = useState(false);
-  const [search,      setSearch]      = useState("");
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const profileRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
 
   const accent   = roleAccent[role as keyof typeof roleAccent] ?? roleAccent.student;
   const navItems = roleNav[role as keyof typeof roleNav]       ?? roleNav.student;
   const unread   = notifications.filter(n => !n.read).length;
 
-  const raw         = user?.email?.split("@")[0] ?? "User";
-  const displayName = raw.charAt(0).toUpperCase() + raw.slice(1);
-  const initial     = displayName[0] ?? "U";
+  const nameFromUser = [user?.firstName, user?.lastName].filter(Boolean).join(" ");
+  const raw          = user?.email?.split("@")[0] ?? "User";
+  const fallbackName = raw.charAt(0).toUpperCase() + raw.slice(1);
+  const displayName  = nameFromUser || fallbackName;
+  const initial      = displayName[0] ?? "U";
 
   const isDark = theme === "dark";
 
-  const handleLogout = () => { logout(); navigate("/login"); };
+  const handleLogout = () => {
+    setProfileOpen(false);
+    logout();
+    navigate("/login");
+  };
 
   const isActive = (path: string) =>
     path === "/dashboard"
       ? location.pathname === "/dashboard"
       : location.pathname.startsWith(path);
+
+  // Close dropdowns on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileOpen(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setNotifOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // ── Sidebar ─────────────────────────────────────────────────────────────────
   const Sidebar = () => (
@@ -130,7 +161,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className={`px-3 pb-5 pt-2 border-t shrink-0 ${isDark ? "border-slate-800" : "border-slate-100"}`}>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
         >
           <LogOut size={16} className="shrink-0" />
           Sign Out
@@ -164,26 +195,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div className="flex-1" />
 
-          {/* Search */}
-          <div className={`hidden sm:flex items-center gap-2 rounded-lg px-3 py-2 w-52 border transition-colors duration-200
+          {/* Search Bar */}
+          <div className={`hidden sm:flex items-center gap-2 rounded-xl px-3 py-2 w-64 border transition-all duration-200
             ${isDark
-              ? "bg-slate-800 border-slate-700 focus-within:border-slate-500"
-              : "bg-slate-100 border-transparent focus-within:border-slate-300 focus-within:bg-white"
+              ? "bg-slate-800/80 border-slate-700 focus-within:border-blue-500"
+              : "bg-slate-100 border-slate-200 focus-within:border-blue-500 focus-within:bg-white"
             }`}>
-            <Search size={13} className={`shrink-0 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
+            <Search size={14} className={`shrink-0 ${isDark ? "text-slate-400" : "text-slate-500"}`} />
             <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search anything..."
-              className={`bg-transparent text-sm outline-none w-full ${isDark ? "text-slate-300 placeholder-slate-500" : "text-slate-700 placeholder-slate-400"}`}
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search applications, reports, messages..."
+              className={`bg-transparent text-xs outline-none w-full ${isDark ? "text-white placeholder-slate-400" : "text-slate-800 placeholder-slate-400"}`}
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="text-slate-400 hover:text-slate-200 p-0.5 cursor-pointer shrink-0"
+              >
+                <X size={12} />
+              </button>
+            )}
           </div>
 
           {/* Dark / Light toggle */}
           <button
             onClick={toggleTheme}
             title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            className={`p-2 rounded-lg transition-all duration-200
+            className={`p-2 rounded-lg transition-all duration-200 cursor-pointer
               ${isDark
                 ? "text-amber-400 hover:bg-slate-800 hover:text-amber-300"
                 : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
@@ -193,10 +232,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
 
           {/* Notifications */}
-          <div className="relative">
+          <div className="relative" ref={notifRef}>
             <button
-              onClick={() => setNotifOpen(!notifOpen)}
-              className={`relative p-2 rounded-lg transition-colors ${isDark ? "text-slate-400 hover:bg-slate-800" : "text-slate-500 hover:bg-slate-100"}`}
+              onClick={() => {
+                setNotifOpen(!notifOpen);
+                setProfileOpen(false);
+              }}
+              className={`relative p-2 rounded-lg transition-colors cursor-pointer ${isDark ? "text-slate-400 hover:bg-slate-800" : "text-slate-500 hover:bg-slate-100"}`}
             >
               <Bell size={18} />
               {unread > 0 && (
@@ -209,7 +251,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 ${isDark ? "bg-[#0f172a] border-slate-700" : "bg-white border-slate-200"}`}>
                 <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? "border-slate-700" : "border-slate-100"}`}>
                   <span className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-800"}`}>Notifications</span>
-                  <button onClick={markAllNotificationsRead} className="text-xs text-blue-500 font-semibold hover:underline">
+                  <button onClick={markAllNotificationsRead} className="text-xs text-blue-500 font-semibold hover:underline cursor-pointer">
                     Mark all read
                   </button>
                 </div>
@@ -229,20 +271,124 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
           </div>
 
-          {/* Messages */}
-          <button className={`p-2 rounded-lg transition-colors ${isDark ? "text-slate-400 hover:bg-slate-800" : "text-slate-500 hover:bg-slate-100"}`}>
+          {/* Messages link */}
+          <button
+            onClick={() => navigate("/dashboard/messages")}
+            className={`p-2 rounded-lg transition-colors cursor-pointer ${isDark ? "text-slate-400 hover:bg-slate-800" : "text-slate-500 hover:bg-slate-100"}`}
+          >
             <MessageSquare size={18} />
           </button>
 
-          {/* User */}
-          <div className={`flex items-center gap-2.5 ml-1 pl-3 border-l ${isDark ? "border-slate-700" : "border-slate-200"}`}>
-            <div className={`w-8 h-8 rounded-full ${accent.avatarBg} flex items-center justify-center text-white text-sm font-bold shrink-0`}>
-              {initial}
-            </div>
-            <div className="hidden sm:block">
-              <p className={`text-sm font-bold leading-none ${isDark ? "text-white" : "text-slate-800"}`}>{displayName}</p>
-              <p className={`text-[10px] mt-0.5 leading-none ${isDark ? "text-slate-500" : "text-slate-400"}`}>{accent.roleLabel}</p>
-            </div>
+          {/* User Profile Dropdown */}
+          <div className="relative" ref={profileRef}>
+            <button
+              onClick={() => {
+                setProfileOpen(!profileOpen);
+                setNotifOpen(false);
+              }}
+              className={`flex items-center gap-2.5 ml-1 pl-3 py-1 px-2 rounded-xl border-l transition-all cursor-pointer ${
+                isDark
+                  ? "border-slate-700 hover:bg-slate-800/80"
+                  : "border-slate-200 hover:bg-slate-100"
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-full overflow-hidden ${accent.avatarBg} flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm`}>
+                {user?.profilePicUrl ? (
+                  <img src={user.profilePicUrl} alt={displayName} className="w-full h-full object-cover" />
+                ) : (
+                  initial
+                )}
+              </div>
+              <div className="hidden sm:block text-left">
+                <p className={`text-sm font-bold leading-none ${isDark ? "text-white" : "text-slate-800"}`}>{displayName}</p>
+                <p className={`text-[10px] mt-0.5 leading-none ${isDark ? "text-slate-500" : "text-slate-400"}`}>{accent.roleLabel}</p>
+              </div>
+              <ChevronDown size={14} className={`text-slate-400 transition-transform ${profileOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {/* Profile Dropdown Popover */}
+            {profileOpen && (
+              <div
+                className={`absolute right-0 top-full mt-2 w-64 rounded-2xl shadow-2xl border z-50 overflow-hidden animate-fade-in ${
+                  isDark ? "bg-[#0f172a] border-slate-800" : "bg-white border-slate-200"
+                }`}
+              >
+                {/* Header User Card */}
+                <div className={`p-4 border-b ${isDark ? "border-slate-800 bg-slate-900/60" : "border-slate-100 bg-slate-50/50"}`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full overflow-hidden ${accent.avatarBg} flex items-center justify-center text-white font-extrabold text-base shadow-sm shrink-0`}>
+                      {user?.profilePicUrl ? (
+                        <img src={user.profilePicUrl} alt={displayName} className="w-full h-full object-cover" />
+                      ) : (
+                        initial
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-sm font-bold truncate ${isDark ? "text-white" : "text-slate-800"}`}>{displayName}</p>
+                      <p className="text-[11px] text-slate-400 truncate">{user?.email}</p>
+                      <span className={`inline-block mt-1 px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider ${accent.activeBg} text-white`}>
+                        {accent.roleLabel}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions Menu */}
+                <div className="p-2 space-y-1 text-xs font-semibold">
+                  <button
+                    onClick={() => {
+                      setProfileOpen(false);
+                      navigate("/dashboard/profile");
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left cursor-pointer ${
+                      isDark ? "text-slate-300 hover:bg-slate-800 hover:text-white" : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <User size={15} className="text-blue-400" />
+                    <span>My Profile</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setProfileOpen(false);
+                      navigate("/dashboard/settings");
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left cursor-pointer ${
+                      isDark ? "text-slate-300 hover:bg-slate-800 hover:text-white" : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <Settings size={15} className="text-purple-400" />
+                    <span>Account Settings</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      toggleTheme();
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-left cursor-pointer ${
+                      isDark ? "text-slate-300 hover:bg-slate-800 hover:text-white" : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-slate-500" />}
+                      <span>Theme</span>
+                    </div>
+                    <span className="text-[10px] uppercase font-extrabold text-slate-400">{theme}</span>
+                  </button>
+                </div>
+
+                {/* Sign Out Footer */}
+                <div className={`p-2 border-t ${isDark ? "border-slate-800" : "border-slate-100"}`}>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
+                  >
+                    <LogOut size={15} />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </header>
 

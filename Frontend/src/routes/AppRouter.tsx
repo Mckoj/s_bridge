@@ -10,6 +10,13 @@ import SignInSuccessfulPage from "../pages/Auth/SignInSuccessfulPage";
 import ResetPasswordPage from "../pages/Auth/ResetPasswordPage";
 import PasswordResetSuccessfulPage from "../pages/Auth/PasswordResetSuccessfulPage";
 import StudentDashboard from "../pages/Student/StudentDashboard";
+import StudentApplicationsPage from "../pages/Student/StudentApplicationsPage";
+import StudentInternshipPage from "../pages/Student/StudentInternshipPage";
+import StudentReportsPage from "../pages/Student/StudentReportsPage";
+import StudentMessagesPage from "../pages/Student/StudentMessagesPage";
+import StudentNotificationsPage from "../pages/Student/StudentNotificationsPage";
+import StudentProfilePage from "../pages/Student/StudentProfilePage";
+import StudentSettingsPage from "../pages/Student/StudentSettingsPage";
 import UniversityDashboard from "../pages/University/UniversityDashboard";
 import CompanyDashboard from "../pages/Recruiter/CompanyDashboard";
 import PortalLanding from "../pages/Landing/PortalLanding";
@@ -50,12 +57,29 @@ const authRoutes = (
   </>
 );
 
-/**
- * All /dashboard/* sub-pages (Profile, Settings, etc.) render
- * inside DashboardLayout with a friendly "under construction" state.
- * This must come AFTER the /dashboard exact route so React Router
- * prefers the exact match at "/dashboard".
- */
+const studentRoutes = (
+  <>
+    <Route path="/dashboard/applications"  element={<ProtectedRoute><StudentApplicationsPage /></ProtectedRoute>} />
+    <Route path="/dashboard/internship text" element={<Navigate to="/dashboard/internship" replace />} />
+    <Route path="/dashboard/internship"    element={<ProtectedRoute><StudentInternshipPage /></ProtectedRoute>} />
+    <Route path="/dashboard/reports"       element={<ProtectedRoute><StudentReportsPage /></ProtectedRoute>} />
+    <Route path="/dashboard/messages text"  element={<Navigate to="/dashboard/messages" replace />} />
+    <Route path="/dashboard/messages"      element={<ProtectedRoute><StudentMessagesPage /></ProtectedRoute>} />
+    <Route path="/dashboard/notifications" element={<ProtectedRoute><StudentNotificationsPage /></ProtectedRoute>} />
+    <Route path="/dashboard/profile"       element={<ProtectedRoute><StudentProfilePage /></ProtectedRoute>} />
+    <Route path="/dashboard/settings"      element={<ProtectedRoute><StudentSettingsPage /></ProtectedRoute>} />
+
+    {/* Student role-prefixed path aliases */}
+    <Route path="/student/dashboard/applications"  element={<ProtectedRoute><StudentApplicationsPage /></ProtectedRoute>} />
+    <Route path="/student/dashboard/internship"    element={<ProtectedRoute><StudentInternshipPage /></ProtectedRoute>} />
+    <Route path="/student/dashboard/reports"       element={<ProtectedRoute><StudentReportsPage /></ProtectedRoute>} />
+    <Route path="/student/dashboard/messages"      element={<ProtectedRoute><StudentMessagesPage /></ProtectedRoute>} />
+    <Route path="/student/dashboard/notifications" element={<ProtectedRoute><StudentNotificationsPage /></ProtectedRoute>} />
+    <Route path="/student/dashboard/profile"       element={<ProtectedRoute><StudentProfilePage /></ProtectedRoute>} />
+    <Route path="/student/dashboard/settings"      element={<ProtectedRoute><StudentSettingsPage /></ProtectedRoute>} />
+  </>
+);
+
 const subPageRoute = (
   <Route
     path="/dashboard/*"
@@ -77,6 +101,7 @@ export default function AppRouter() {
               <Route path="/"          element={<PortalLanding portal="student" />} />
               {authRoutes}
               <Route path="/dashboard" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
+              {studentRoutes}
               {subPageRoute}
               <Route path="*"          element={<Navigate to="/" replace />} />
             </>
@@ -110,22 +135,20 @@ export default function AppRouter() {
               <Route path="/" element={<LandingPage />} />
               {authRoutes}
 
-              {/*
-               * Single /dashboard route — RoleBasedDashboard reads the role from context
-               * and renders the correct dashboard. This means ALL sidebar "Dashboard" links
-               * (which always point to /dashboard) work correctly regardless of portal.
-               */}
               <Route
                 path="/dashboard"
                 element={<ProtectedRoute><RoleBasedDashboard /></ProtectedRoute>}
               />
 
-              {/* Legacy role-prefixed paths kept as aliases so old bookmarks still work */}
+              {/* Student specific sub-routes */}
+              {studentRoutes}
+
+              {/* Legacy role-prefixed paths kept as aliases */}
               <Route path="/student/dashboard"    element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
               <Route path="/university/dashboard" element={<ProtectedRoute><UniversityDashboard /></ProtectedRoute>} />
               <Route path="/company/dashboard"    element={<ProtectedRoute><CompanyDashboard /></ProtectedRoute>} />
 
-              {/* Sub-pages */}
+              {/* Fallback Sub-pages */}
               {subPageRoute}
               <Route path="/student/dashboard/*"    element={<ProtectedRoute><DashboardSubPage /></ProtectedRoute>} />
               <Route path="/university/dashboard/*" element={<ProtectedRoute><DashboardSubPage /></ProtectedRoute>} />
