@@ -1,4 +1,5 @@
 const prisma = require('../config/db');
+const { uploadToCloudinary } = require('../utils/cloudinary');
 
 async function getAllStudents(req, res) {
   try {
@@ -309,6 +310,56 @@ async function getStudentStats(req, res) {
   }
 }
 
+async function uploadCV(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded. Please attach a PDF file.' });
+    }
+
+    const student = req.user.student;
+    if (!student) {
+      return res.status(403).json({ error: 'Only students can upload a CV' });
+    }
+
+    const result = await uploadToCloudinary(req.file.buffer, 'cvs', 'raw');
+
+    const updated = await prisma.student.update({
+      where: { id: student.id },
+      data: { cvUrl: result.url }
+    });
+
+    res.json({ success: true, message: 'CV uploaded successfully', cvUrl: updated.cvUrl });
+  } catch (error) {
+    console.error('Error uploading CV:', error);
+    res.status(500).json({ error: error.message || 'Failed to upload CV' });
+  }
+}
+
+async function uploadAvatar(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded. Please attach an image file.' });
+    }
+
+    const student = req.user.student;
+    if (!student) {
+      return res.status(403).json({ error: 'Only students can upload a profile picture' });
+    }
+
+    const result = await uploadToCloudinary(req.file.buffer, 'profiles', 'image');
+
+    const updated = await prisma.student.update({
+      where: { id: student.id },
+      data: { profilePicUrl: result.url }
+    });
+
+    res.json({ success: true, message: 'Profile picture uploaded successfully', profilePicUrl: updated.profilePicUrl });
+  } catch (error) {
+    console.error('Error uploading avatar:', error);
+    res.status(500).json({ error: error.message || 'Failed to upload profile picture' });
+  }
+}
+
 module.exports = {
   getAllStudents,
   getStudentById,
@@ -316,7 +367,9 @@ module.exports = {
   deleteStudent,
   getActiveInternship,
   getStudentApplications,
-  getStudentStats
+  getStudentStats,
+  uploadCV,
+  uploadAvatar
 };
 
 

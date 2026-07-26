@@ -68,4 +68,52 @@ async function sendVerificationEmail(email, token, otp) {
   }
 }
 
-module.exports = { sendVerificationEmail };
+async function sendPasswordResetEmail(email, token, otp) {
+  const transporter = createTransporter();
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const resetLink = `${frontendUrl}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+
+  const subject = 'S-Bridge — Password Reset Request';
+  const textContent = `You requested a password reset for your S-Bridge account.\n\nUse the OTP below or click the link to reset your password:\n\nReset Link: ${resetLink}\nOTP Code: ${otp}\n\nThis code expires in 1 hour. If you did not request this, please ignore this email.`;
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+      <h2 style="color: #2563eb;">Password Reset Request</h2>
+      <p style="color: #475569; font-size: 14px;">We received a request to reset the password for your S-Bridge account associated with this email.</p>
+      
+      <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
+        <p style="font-size: 12px; color: #64748b; margin-bottom: 5px;">Your Password Reset Code</p>
+        <span style="font-size: 24px; font-weight: bold; letter-spacing: 4px; color: #1e293b;">${otp}</span>
+      </div>
+
+      <div style="text-align: center; margin: 25px 0;">
+        <a href="${resetLink}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;">Reset Password</a>
+      </div>
+
+      <p style="font-size: 12px; color: #94a3b8;">This code expires in <strong>1 hour</strong>. If you did not request a password reset, you can safely ignore this email.</p>
+    </div>
+  `;
+
+  if (transporter) {
+    try {
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || '"S-Bridge" <noreply@sbridge.edu>',
+        to: email,
+        subject,
+        text: textContent,
+        html: htmlContent
+      });
+      console.log(`[Email Service] Password reset email dispatched to ${email}`);
+    } catch (err) {
+      console.error('[Email Service] Error sending password reset email:', err.message);
+    }
+  } else {
+    console.log('\n=================== [DEV MODE PASSWORD RESET EMAIL] ===================');
+    console.log(`TO: ${email}`);
+    console.log(`SUBJECT: ${subject}`);
+    console.log(`RESET LINK: ${resetLink}`);
+    console.log(`RESET OTP: ${otp}`);
+    console.log('=======================================================================\n');
+  }
+}
+
+module.exports = { sendVerificationEmail, sendPasswordResetEmail };
