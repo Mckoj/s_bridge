@@ -58,7 +58,14 @@ Frontend/
 │   │   │   ├── RoleBasedDashboard.tsx  # Dispatch by role
 │   │   │   └── DashboardSubPage.tsx    # "Under Construction" stub
 │   │   ├── Student/
-│   │   │   └── StudentDashboard.tsx
+│   │   │   ├── StudentDashboard.tsx
+│   │   │   ├── StudentApplicationsPage.tsx
+│   │   │   ├── StudentInternshipPage.tsx
+│   │   │   ├── StudentReportsPage.tsx
+│   │   │   ├── StudentMessagesPage.tsx
+│   │   │   ├── StudentNotificationsPage.tsx
+│   │   │   ├── StudentProfilePage.tsx
+│   │   │   └── StudentSettingsPage.tsx
 │   │   ├── University/
 │   │   │   └── UniversityDashboard.tsx
 │   │   ├── Recruiter/
