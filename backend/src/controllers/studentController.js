@@ -23,8 +23,13 @@ async function getStudentById(req, res) {
   try {
     const { id } = req.params;
 
-    const student = await prisma.student.findUnique({
-      where: { id },
+    const student = await prisma.student.findFirst({
+      where: {
+        OR: [
+          { id },
+          { userId: id }
+        ]
+      },
       include: {
         skills: {
           include: { skill: true }
@@ -59,7 +64,15 @@ async function updateStudent(req, res) {
     const { id } = req.params;
     const { firstName, lastName, phone, gpa, programme, experience, cvUrl, profilePicUrl, skills } = req.body;
 
-    const student = await prisma.student.findUnique({ where: { id } });
+    const student = await prisma.student.findFirst({ 
+      where: { 
+        OR: [
+          { id },
+          { userId: id }
+        ]
+      } 
+    });
+    
     if (!student) {
       return res.status(404).json({ error: 'Student profile not found' });
     }
@@ -70,7 +83,7 @@ async function updateStudent(req, res) {
 
     const updatedStudent = await prisma.$transaction(async (tx) => {
       const updated = await tx.student.update({
-        where: { id },
+        where: { id: student.id },
         data: {
           firstName,
           lastName,
@@ -85,7 +98,7 @@ async function updateStudent(req, res) {
 
       if (skills && Array.isArray(skills)) {
         await tx.studentSkill.deleteMany({
-          where: { studentId: id }
+          where: { studentId: student.id }
         });
 
         for (const skillName of skills) {
@@ -100,7 +113,7 @@ async function updateStudent(req, res) {
 
           await tx.studentSkill.create({
             data: {
-              studentId: id,
+              studentId: student.id,
               skillId: dbSkill.id
             }
           });
@@ -108,7 +121,7 @@ async function updateStudent(req, res) {
       }
 
       return tx.student.findUnique({
-        where: { id },
+        where: { id: student.id },
         include: {
           skills: {
             include: { skill: true }
@@ -127,7 +140,14 @@ async function updateStudent(req, res) {
 async function deleteStudent(req, res) {
   try {
     const { id } = req.params;
-    const student = await prisma.student.findUnique({ where: { id } });
+    const student = await prisma.student.findFirst({ 
+      where: { 
+        OR: [
+          { id },
+          { userId: id }
+        ]
+      } 
+    });
     if (!student) {
       return res.status(404).json({ error: 'Student profile not found' });
     }

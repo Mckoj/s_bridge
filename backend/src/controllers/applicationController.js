@@ -129,6 +129,12 @@ async function getApplications(req, res) {
         return res.status(400).json({ error: 'Recruiter profile not found' });
       }
 
+      const sortBy = req.query.sortBy;
+      let orderBy = { createdAt: 'desc' };
+      if (sortBy === 'matchScore') {
+        orderBy = { matchScore: 'desc' };
+      }
+
       applications = await prisma.application.findMany({
         where: {
           internship: {
@@ -148,7 +154,7 @@ async function getApplications(req, res) {
           },
           internship: true
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy
       });
     } else if (role === 'UNIVERSITY' || role === 'ADMIN') {
       applications = await prisma.application.findMany({
