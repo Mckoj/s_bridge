@@ -6,6 +6,10 @@ const { authenticate, authorizeRoles } = require('../middleware/auth');
 // Get all recruiters (Admin & University only)
 router.get('/', authenticate, authorizeRoles('ADMIN', 'UNIVERSITY'), recruiterController.getAllRecruiters);
 
+// Get recruiter stats
+router.get('/stats', authenticate, recruiterController.getRecruiterStats);
+router.get('/me/stats', authenticate, recruiterController.getRecruiterStats);
+
 // Get recruiter details by ID
 router.get('/:id', authenticate, recruiterController.getRecruiterById);
 

@@ -100,8 +100,55 @@ async function updateRecruiter(req, res) {
   }
 }
 
+async function getRecruiterStats(req, res) {
+  try {
+    const recruiter = req.user.recruiter;
+    if (!recruiter) {
+      return res.status(403).json({ error: 'Only registered recruiters can view stats' });
+    }
+
+    const recruiterId = recruiter.id;
+
+    const totalListings = await prisma.internship.count({
+      where: { recruiterId }
+    });
+
+    const totalApplications = await prisma.application.count({
+      where: { internship: { recruiterId } }
+    });
+
+    const pendingReviews = await prisma.application.count({
+      where: {
+        internship: { recruiterId },
+        status: { in: ['PENDING', 'REVIEWING'] }
+      }
+    });
+
+    const acceptedCandidates = await prisma.application.count({
+      where: {
+        internship: { recruiterId },
+        status: 'ACCEPTED'
+      }
+    });
+
+    res.json({
+      success: true,
+      stats: {
+        totalListings,
+        totalApplications,
+        pendingReviews,
+        acceptedCandidates
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching recruiter stats:', error);
+    res.status(500).json({ error: 'Failed to fetch recruiter statistics' });
+  }
+}
+
 module.exports = {
   getAllRecruiters,
   getRecruiterById,
-  updateRecruiter
+  updateRecruiter,
+  getRecruiterStats
 };

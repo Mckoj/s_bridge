@@ -2,6 +2,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../config/db');
 const authService = require('../services/authServices');
+const crypto = require('crypto');
+const { sendVerificationEmail } = require('../utils/email');
 
 const register = async (req, res) => {
     try {
@@ -51,4 +53,92 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { register, login };
+const verifyEmail = async (req, res) => {
+    try {
+        const { token, email, otp } = req.body;
+        
+        if (!token && (!email || !otp)) {
+            return res.status(400).json({ message: 'Token or email and OTP are required' });
+        }
+
+        let tokenRecords;
+        if (token) {
+             tokenRecords = await prisma.emailVerificationToken.findMany({
+                 where: { token: { startsWith: `${token}:` } }
+             });
+        } else {
+             tokenRecords = await prisma.emailVerificationToken.findMany({
+                 where: { email, token: { endsWith: `:${otp}` } }
+             });
+        }
+
+        if (tokenRecords.length === 0) {
+            return res.status(400).json({ message: 'Invalid or expired token/OTP' });
+        }
+
+        const tokenRecord = tokenRecords[0];
+
+        if (tokenRecord.expiresAt < new Date()) {
+            await prisma.emailVerificationToken.delete({ where: { id: tokenRecord.id } });
+            return res.status(400).json({ message: 'Verification token has expired. Please request a new one.' });
+        }
+
+        await prisma.user.update({
+            where: { id: tokenRecord.userId },
+            data: { isVerified: true }
+        });
+
+        await prisma.emailVerificationToken.deleteMany({
+            where: { userId: tokenRecord.userId }
+        });
+
+        res.json({ success: true, message: 'Email verified successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const resendVerification = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
+
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        if (user.isVerified) {
+            return res.status(400).json({ message: 'User is already verified' });
+        }
+
+        // Generate verification token and 6-digit OTP
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const storedToken = `${verificationToken}:${otpCode}`;
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+        // Delete existing tokens for the user
+        await prisma.emailVerificationToken.deleteMany({ where: { userId: user.id } });
+
+        await prisma.emailVerificationToken.create({
+            data: {
+                userId: user.id,
+                email: user.email,
+                token: storedToken,
+                expiresAt
+            }
+        });
+
+        sendVerificationEmail(email, verificationToken, otpCode).catch((err) => {
+            console.error('Failed to resend verification email:', err);
+        });
+
+        res.json({ success: true, message: 'Verification email resent successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { register, login, verifyEmail, resendVerification };
