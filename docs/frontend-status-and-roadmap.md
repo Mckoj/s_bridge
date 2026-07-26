@@ -34,27 +34,23 @@ This document provides a detailed breakdown of what has been completed for the S
   - Response interceptor handling `401 Unauthorized` globally (clears session and redirects to `/login`).
 - **Auth Context (`src/context/AuthContext.tsx`):** Global React context handling user credentials, JWT token, login/register calls, logout action, and `localStorage` synchronization.
 
-### D. Design System & Dashboard Framework
-- **Theme Engine (`src/context/DashboardContext.tsx`):** Supports instant Dark/Light mode toggle across all portal layouts.
-- **Rich Aesthetic Styling:** Built with Vanilla CSS, glassmorphism containers, smooth backdrop blurs, micro-animations, and custom typography.
-- **Dashboard Layouts:**
-  - **Student Dashboard (`StudentDashboard.tsx`):** Cards for AI match scores, active application trackers, skill tags, and timeline feeds.
-  - **Recruiter Dashboard (`CompanyDashboard.tsx`):** Cards for active job listings, total applicant counts, company overview stats, and candidate cards.
-  - **University Dashboard (`UniversityDashboard.tsx`):** Cards for student placement statistics, company approvals, and logbook report review queues.
+### E. Student Portal Sub-Pages & Interfaces
+- **Applications Management (`StudentApplicationsPage.tsx`):** Application tracker timeline, filter tabs (`All`, `Under Review`, `Accepted`, `Interviewing`), status badges, dynamic cover letter inspection, and withdraw application workflow.
+- **Internship Opportunity Search (`StudentInternshipPage.tsx`):** Search bar, domain/location/type filtering, match score displays, requirement tag lists, bookmarking, and quick application modal.
+- **Logbook & Weekly Reports (`StudentReportsPage.tsx`):** Report creation/submission drawer, status tracking (`Submitted`, `Approved`, `Pending Feedback`), supervisor comment thread, and document attachment history.
+- **Messaging Center (`StudentMessagesPage.tsx`):** Real-time styled messaging interface with company recruiters and university supervisors, unread badges, attachments preview, and search.
+- **Notifications Hub (`StudentNotificationsPage.tsx`):** Categorized notification feed (`Application`, `System`, `Report`, `Message`), mark-as-read toggles, and direct quick-action links.
+- **Profile & Resume Builder (`StudentProfilePage.tsx`):** Interactive profile management view with personal bio, academic stats (GPA, Programme, Index Number), dynamic skill tag manager, work experience timeline, and CV upload preview.
+- **Student Settings (`StudentSettingsPage.tsx`):** Account preferences, security settings (password change), email/SMS notification toggles, and privacy controls.
 
 ---
 
 ## 2. Next Steps & Frontend Roadmap
 
-1. **Connect Main Dashboards to Live Backend Data:**
-   - Replace static mock data on student, recruiter, and university dashboards with live API data from backend endpoints (`GET /api/students/:id`, `GET /api/recruiters/:id`, etc.).
+1. **Connect Main Dashboards & Sub-Pages to Live Backend Data:**
+   - Replace static mock data on student, recruiter, and university pages with live API endpoints (`GET /api/students/:id`, `GET /api/applications`, `POST /api/applications`, `GET /api/reports`, etc.).
 
-2. **Build Full Sub-Pages (Replacing `DashboardSubPage.tsx` Placeholders):**
-   - **Student Views:**
-     - *Find Opportunities / Job Search:* Interactive searchable job list with filters (location, type, skill tag) and an "Apply Now" modal.
-     - *My Applications:* Status tracking timeline (`Pending`, `Reviewing`, `Accepted`, `Rejected`) with cover letter details.
-     - *Profile & Skills Editor:* Profile editor form allowing students to update GPA, Programme, CV URL, and skill tags.
-     - *Weekly Logbook Submission:* Upload form for weekly progress reports submitted to university supervisors.
+2. **Build Recruiter & University Sub-Pages (Replacing `DashboardSubPage.tsx` Placeholders):**
    - **Recruiter Views:**
      - *Post an Internship / Job Builder:* Form to create new job listings with target programmes and required skills.
      - *Manage Listings & Applicants:* Candidate review interface displaying match scores, applicant details, and status update actions.
@@ -67,8 +63,6 @@ This document provides a detailed breakdown of what has been completed for the S
 3. **File Upload UI Dropzones:**
    - Implement drag-and-drop file upload interfaces for Student CVs, Profile pictures, Company logos, and Logbook PDFs.
 
-4. **Notifications UI Component:**
-   - Header bell icon with an interactive notifications dropdown drawer showing real-time updates on applications and reports.
-
-5. **OTP Email Verification Flow Wiring:**
+4. **OTP Email Verification Flow Wiring:**
    - Connect the OTP input pages (`SignupOTPPage`, `ResetPasswordOTPPage`) to backend email verification endpoints when SMTP dispatch is enabled.
+
