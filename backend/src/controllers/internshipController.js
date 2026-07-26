@@ -130,7 +130,25 @@ async function getAllInternships(req, res) {
       orderBy: { createdAt: 'desc' }
     });
 
-    res.json({ success: true, count: internships.length, internships });
+    // If the caller is a student, compute match scores using their skills
+    let enrichedInternships = internships;
+    if (req.user && req.user.role === 'STUDENT' && req.user.student?.skills) {
+      const studentSkillNames = new Set(
+        req.user.student.skills.map(s => s.skill.name.toLowerCase())
+      );
+
+      enrichedInternships = internships.map(internship => {
+        const requiredSkills = internship.skills.map(s => s.skill.name.toLowerCase());
+        if (requiredSkills.length === 0) {
+          return { ...internship, matchScore: 0 };
+        }
+        const matchingCount = requiredSkills.filter(s => studentSkillNames.has(s)).length;
+        const matchScore = Math.round((matchingCount / requiredSkills.length) * 100);
+        return { ...internship, matchScore };
+      });
+    }
+
+    res.json({ success: true, count: enrichedInternships.length, internships: enrichedInternships });
   } catch (error) {
     console.error('Error fetching internships:', error);
     res.status(500).json({ error: 'Failed to fetch internships' });
