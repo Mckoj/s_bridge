@@ -143,9 +143,160 @@ async function deleteStudent(req, res) {
   }
 }
 
+async function getActiveInternship(req, res) {
+  try {
+    const student = req.user.student;
+    if (!student) {
+      return res.status(403).json({ error: 'Only students can view active internships' });
+    }
+
+    const activeApp = await prisma.application.findFirst({
+      where: {
+        studentId: student.id,
+        status: 'ACCEPTED'
+      },
+      include: {
+        internship: {
+          include: {
+            recruiter: {
+              include: { companyProfile: true }
+            }
+          }
+        }
+      }
+    });
+
+    if (!activeApp) {
+      return res.json(null);
+    }
+
+    const internship = activeApp.internship;
+    const recruiter = internship.recruiter;
+    const profile = recruiter.companyProfile;
+
+    const responseData = {
+      id: internship.id,
+      title: internship.title,
+      companyName: recruiter.companyName,
+      companyAddress: profile?.address || internship.location,
+      companyLogo: profile?.logoUrl || '',
+      startDate: activeApp.updatedAt.toISOString().split('T')[0],
+      endDate: 'Ongoing',
+      internshipType: internship.internshipType,
+      companySupervisor: {
+        name: `${recruiter.position || 'Recruiter Supervisor'}`,
+        email: recruiter.companyWebsite || '',
+        position: recruiter.position || 'Supervisor'
+      },
+      universitySupervisor: {
+        name: 'University Placement Coordinator',
+        email: 'coordinator@university.edu'
+      },
+      status: 'ACTIVE'
+    };
+
+    res.json(responseData);
+  } catch (error) {
+    console.error('Error fetching active internship:', error);
+    res.status(500).json({ error: 'Failed to fetch active internship' });
+  }
+}
+
+async function getStudentApplications(req, res) {
+  try {
+    const student = req.user.student;
+    if (!student) {
+      return res.status(403).json({ error: 'Only students can view their applications' });
+    }
+
+    const applications = await prisma.application.findMany({
+      where: { studentId: student.id },
+      include: {
+        internship: {
+          include: {
+            recruiter: {
+              select: { companyName: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const formatted = applications.map(app => ({
+      id: app.id,
+      internshipId: app.internshipId,
+      internshipTitle: app.internship.title,
+      companyName: app.internship.recruiter.companyName,
+      location: app.internship.location,
+      internshipType: app.internship.internshipType,
+      appliedDate: app.createdAt.toISOString().split('T')[0],
+      status: app.status,
+      coverLetter: app.coverLetter,
+      matchScore: app.matchScore
+    }));
+
+    res.json(formatted);
+  } catch (error) {
+    console.error('Error fetching student applications:', error);
+    res.status(500).json({ error: 'Failed to fetch applications' });
+  }
+}
+
+async function getStudentStats(req, res) {
+  try {
+    const student = req.user.student;
+    if (!student) {
+      return res.status(403).json({ error: 'Only registered students can view stats' });
+    }
+
+    const studentId = student.id;
+
+    const totalApplications = await prisma.application.count({
+      where: { studentId }
+    });
+
+    const pendingReviews = await prisma.application.count({
+      where: {
+        studentId,
+        status: { in: ['PENDING', 'REVIEWING'] }
+      }
+    });
+
+    const acceptedOffers = await prisma.application.count({
+      where: {
+        studentId,
+        status: 'ACCEPTED'
+      }
+    });
+
+    const submittedReports = await prisma.report.count({
+      where: { studentId }
+    });
+
+    res.json({
+      success: true,
+      stats: {
+        totalApplications,
+        pendingReviews,
+        acceptedOffers,
+        submittedReports
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching student stats:', error);
+    res.status(500).json({ error: 'Failed to fetch student statistics' });
+  }
+}
+
 module.exports = {
   getAllStudents,
   getStudentById,
   updateStudent,
-  deleteStudent
+  deleteStudent,
+  getActiveInternship,
+  getStudentApplications,
+  getStudentStats
 };
+
+
