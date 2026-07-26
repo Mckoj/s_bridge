@@ -1,4 +1,5 @@
 const prisma = require('../config/db');
+const { uploadToCloudinary } = require('../utils/cloudinary');
 
 async function getAllRecruiters(req, res) {
   try {
@@ -146,9 +147,36 @@ async function getRecruiterStats(req, res) {
   }
 }
 
+async function uploadLogo(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded. Please attach an image file.' });
+    }
+
+    const recruiter = req.user.recruiter;
+    if (!recruiter) {
+      return res.status(403).json({ error: 'Only recruiters can upload a company logo' });
+    }
+
+    const result = await uploadToCloudinary(req.file.buffer, 'logos', 'image');
+
+    await prisma.companyProfile.upsert({
+      where: { recruiterId: recruiter.id },
+      create: { recruiterId: recruiter.id, logoUrl: result.url },
+      update: { logoUrl: result.url }
+    });
+
+    res.json({ success: true, message: 'Company logo uploaded successfully', logoUrl: result.url });
+  } catch (error) {
+    console.error('Error uploading logo:', error);
+    res.status(500).json({ error: error.message || 'Failed to upload company logo' });
+  }
+}
+
 module.exports = {
   getAllRecruiters,
   getRecruiterById,
   updateRecruiter,
-  getRecruiterStats
+  getRecruiterStats,
+  uploadLogo
 };

@@ -17,6 +17,7 @@ import StudentMessagesPage from "../pages/Student/StudentMessagesPage";
 import StudentNotificationsPage from "../pages/Student/StudentNotificationsPage";
 import StudentProfilePage from "../pages/Student/StudentProfilePage";
 import StudentSettingsPage from "../pages/Student/StudentSettingsPage";
+import ExploreOpportunitiesPage from "../pages/Student/ExploreOpportunitiesPage";
 import UniversityDashboard from "../pages/University/UniversityDashboard";
 import CompanyDashboard from "../pages/Recruiter/CompanyDashboard";
 import PortalLanding from "../pages/Landing/PortalLanding";
@@ -68,6 +69,7 @@ const studentRoutes = (
     <Route path="/dashboard/notifications" element={<ProtectedRoute><StudentNotificationsPage /></ProtectedRoute>} />
     <Route path="/dashboard/profile"       element={<ProtectedRoute><StudentProfilePage /></ProtectedRoute>} />
     <Route path="/dashboard/settings"      element={<ProtectedRoute><StudentSettingsPage /></ProtectedRoute>} />
+    <Route path="/dashboard/explore"       element={<ProtectedRoute><ExploreOpportunitiesPage /></ProtectedRoute>} />
 
     {/* Student role-prefixed path aliases */}
     <Route path="/student/dashboard/applications"  element={<ProtectedRoute><StudentApplicationsPage /></ProtectedRoute>} />
@@ -77,6 +79,7 @@ const studentRoutes = (
     <Route path="/student/dashboard/notifications" element={<ProtectedRoute><StudentNotificationsPage /></ProtectedRoute>} />
     <Route path="/student/dashboard/profile"       element={<ProtectedRoute><StudentProfilePage /></ProtectedRoute>} />
     <Route path="/student/dashboard/settings"      element={<ProtectedRoute><StudentSettingsPage /></ProtectedRoute>} />
+    <Route path="/student/dashboard/explore"       element={<ProtectedRoute><ExploreOpportunitiesPage /></ProtectedRoute>} />
   </>
 );
 
