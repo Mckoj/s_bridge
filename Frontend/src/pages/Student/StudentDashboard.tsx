@@ -176,7 +176,9 @@ export default function StudentDashboard() {
   const { tasks, studentMessages } = useDashboard();
   const dark  = useTheme();
   const raw   = user?.email?.split("@")[0] ?? "Student";
-  const displayName = raw.charAt(0).toUpperCase() + raw.slice(1);
+  const displayName = user?.firstName
+    ? user.firstName
+    : (raw.charAt(0).toUpperCase() + raw.slice(1));
 
   // TODO: derive these counts from backend data (GET /api/student/applications/stats)
   const totalApplications = 0;
