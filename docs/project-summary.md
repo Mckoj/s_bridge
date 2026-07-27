@@ -10,6 +10,8 @@ The root `docs/` directory contains detailed status and roadmap reports for each
 
 - 📘 [Backend Status & Roadmap](file:///c:/Users/HP/Desktop/Mini%20Project/Main-Project/s_bridge/docs/backend-status-and-roadmap.md) — PostgreSQL/Prisma v7 schema, JWT authentication, transactional account registration, file uploads (Cloudinary), match scoring engine, and REST APIs.
 - 🎨 [Frontend Status & Roadmap](file:///c:/Users/HP/Desktop/Mini%20Project/Main-Project/s_bridge/docs/frontend-status-and-roadmap.md) — Multi-portal routing, Auth flows, Explore page with match scores, Applications tracker, Logbook management, and Profile CV/Avatar uploads.
+- 🏛️ [University Portal Audit & Security Strategy](file:///c:/Users/HP/Desktop/Mini%20Project/Main-Project/s_bridge/docs/university-portal-audit-and-security.md) — Detailed technical audit, FERPA multi-tenant security model, database schema updates, and roadmap.
+- 🎓 [Student Portal Audit & Security Strategy](file:///c:/Users/HP/Desktop/Mini%20Project/Main-Project/s_bridge/docs/student-portal-audit-and-security.md) — Detailed technical audit, IDOR security rules, upload validation, schema updates, and roadmap.
 
 ---
 

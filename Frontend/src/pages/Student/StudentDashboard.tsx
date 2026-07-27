@@ -86,6 +86,10 @@ export default function StudentDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const dark = useTheme();
+  const rawName = user?.email?.split("@")[0] ?? "Student";
+  const displayName = user?.firstName
+    ? user.firstName
+    : (rawName.charAt(0).toUpperCase() + rawName.slice(1));
 
   const [stats, setStats] = useState<StudentStats>({
     totalApplications: 0,
@@ -107,11 +111,6 @@ export default function StudentDashboard() {
   // CV Upload state
   const [cvUploading, setCvUploading] = useState(false);
   const [cvMsg, setCvMsg] = useState<string | null>(null);
-
-  const rawName = user?.email?.split("@")[0] ?? "Student";
-  const displayName = user?.firstName
-    ? user.firstName
-    : (rawName.charAt(0).toUpperCase() + rawName.slice(1));
 
   const fetchData = async () => {
     setLoading(true);
