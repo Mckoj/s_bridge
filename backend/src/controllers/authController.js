@@ -26,8 +26,10 @@ const login = async (req, res) => {
             return res.status(400).json({ message: 'Email and password are required' });
         }
 
+        const cleanEmail = typeof email === 'string' ? email.trim().toLowerCase() : String(email).trim().toLowerCase();
+
         const user = await prisma.user.findUnique({
-            where: { email },
+            where: { email: cleanEmail },
             include: {
                 student: { select: { firstName: true, lastName: true, profilePicUrl: true } },
                 recruiter: { select: { companyName: true } },
