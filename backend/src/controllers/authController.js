@@ -26,7 +26,14 @@ const login = async (req, res) => {
             return res.status(400).json({ message: 'Email and password are required' });
         }
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.user.findUnique({
+            where: { email },
+            include: {
+                student: { select: { firstName: true, lastName: true, profilePicUrl: true } },
+                recruiter: { select: { companyName: true } },
+                university: { select: { universityName: true } }
+            }
+        });
 
         if (!user) {
             return res.status(401).json({ message: 'Invalid email or password' });
@@ -46,7 +53,13 @@ const login = async (req, res) => {
         res.json({
             message: 'Login successful',
             token,
-            user: { id: user.id, email: user.email, role: user.role }
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                firstName: user.student?.firstName ?? user.recruiter?.companyName ?? user.university?.universityName ?? null,
+                lastName: user.student?.lastName ?? null
+            }
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
