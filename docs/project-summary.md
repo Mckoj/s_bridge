@@ -8,8 +8,8 @@ S-Bridge is a multi-portal web platform connecting **Students**, **Recruiters (E
 
 The root `docs/` directory contains detailed status and roadmap reports for each tier of the project:
 
-- 📘 [Backend Status & Roadmap](file:///c:/Users/HP/Desktop/Mini%20Project/Main-Project/s_bridge/docs/backend-status-and-roadmap.md) — PostgreSQL/Prisma v7 schema, JWT authentication, transactional account registration, role-based authorization, and profile REST APIs.
-- 🎨 [Frontend Status & Roadmap](file:///c:/Users/HP/Desktop/Mini%20Project/Main-Project/s_bridge/docs/frontend-status-and-roadmap.md) — Multi-portal sub-domain routing, auth screen flows, Axios interceptors, Dark/Light mode theme system, and dashboard layouts.
+- 📘 [Backend Status & Roadmap](file:///c:/Users/HP/Desktop/Mini%20Project/Main-Project/s_bridge/docs/backend-status-and-roadmap.md) — PostgreSQL/Prisma v7 schema, JWT authentication, transactional account registration, file uploads (Cloudinary), match scoring engine, and REST APIs.
+- 🎨 [Frontend Status & Roadmap](file:///c:/Users/HP/Desktop/Mini%20Project/Main-Project/s_bridge/docs/frontend-status-and-roadmap.md) — Multi-portal routing, Auth flows, Explore page with match scores, Applications tracker, Logbook management, and Profile CV/Avatar uploads.
 
 ---
 
@@ -18,15 +18,16 @@ The root `docs/` directory contains detailed status and roadmap reports for each
 | Layer / Feature | Status | Key Highlights |
 | :--- | :---: | :--- |
 | **Database Schema** | **Completed** | Full Prisma v7 schema with 13 models (`User`, `Student`, `Recruiter`, `University`, `Internship`, `Application`, `Report`, etc.) deployed on Neon PostgreSQL. |
-| **Authentication Flow** | **Completed** | Full-stack JWT auth with bcrypt password hashing, transactional `$transaction` multi-role signup, and local storage token management. |
-| **Student Registration Fields** | **Completed** | Added unique `studentId` and `indexNumber` fields across database schema, backend services, auth context, and signup form. |
+| **Authentication Flow** | **Completed** | Full-stack JWT auth with bcrypt password hashing, transactional `$transaction` multi-role signup, and pre-joined profile name serialization. |
+| **Password Reset & Change** | **Completed** | OTP generation/validation (`forgot-password`, `reset-password`) and authenticated password change (`PUT /api/auth/change-password`). |
 | **Profile REST APIs** | **Completed** | `GET`/`PUT`/`DELETE` endpoints for Student and Recruiter profiles secured by JWT `authenticate` and `authorizeRoles` middleware. |
-| **Multi-Portal UI Routing** | **Completed** | React Router setup with sub-domain switching (`student.`, `university.`, `recruiter.`) and client-side `ProtectedRoute` guards. |
-| **Dashboard UI Framework** | **Completed** | Dark/Light mode theme system with glassmorphism styling for Student, Recruiter, and University dashboards. |
-| **Internships & Matching API** | *In Progress* | Backend schema ready; controller/routes and skill-matching scoring algorithm next to build. |
-| **Dashboard Sub-Pages** | *In Progress* | Placeholders (`DashboardSubPage.tsx`) active; full sub-page forms (Job Search, Post Job, Report Upload, Monitoring Roster) next to build. |
-| **Logbook & Progress Reports** | *Pending* | Backend model ready; report upload endpoints and supervisor review interfaces next to build. |
-| **File Storage Integration** | *Pending* | Integration of file upload middleware (S3 / Cloudinary) for CVs, logos, and logbook PDFs. |
+| **File Storage Integration** | **Completed** | Multer memory storage + Cloudinary streaming pipeline for Student CVs (`upload-cv`), Avatars (`upload-avatar`), and Company Logos (`upload-logo`). |
+| **Internships & Matching API** | **Completed** | `GET /api/internships` dynamically calculates a `matchScore` percentage (0–100%) for students based on skill tag overlap. |
+| **Applications Engine** | **Completed** | `POST /api/applications` submission with cover letter and status management (`PENDING`, `REVIEWING`, `ACCEPTED`, `REJECTED`). |
+| **Explore Opportunities Page** | **Completed** | Dedicated `/dashboard/explore` view featuring color-coded match badges, match score sorting, type filtering, and quick application modal. |
+| **Logbook & Progress Reports** | **Completed** | `/api/reports` API for submitting weekly reports (with active placement validation) and supervisor status updates. |
+| **University Analytics API** | **Completed** | `/api/universities/stats` endpoint returning student totals, active placements, application counts, and recruiter approval status. |
+| **Recruiter & University UI Wiring** | *In Progress* | Recruiter job posting form and University student roster views next to finalize. |
 
 ---
 
@@ -36,7 +37,7 @@ The root `docs/` directory contains detailed status and roadmap reports for each
 ```bash
 cd backend
 npm install
-# Set environment variables in backend/.env (DATABASE_URL, JWT_SECRET, PORT=5000)
+# Set environment variables in backend/.env (DATABASE_URL, JWT_SECRET, PORT=5000, CLOUDINARY_*)
 npx prisma generate
 npx prisma db seed
 npm run dev

@@ -1,6 +1,6 @@
 # S-Bridge — Backend Implementation & Roadmap Status
 
-This document provides a detailed breakdown of what has been completed for the S-Bridge backend architecture, database layer, authentication system, and profile APIs, as well as the remaining backend tasks.
+This document provides a detailed breakdown of what has been completed for the S-Bridge backend architecture, database layer, authentication system, profile APIs, and core platform services.
 
 ---
 
@@ -21,56 +21,62 @@ This document provides a detailed breakdown of what has been completed for the S
   - **`PasswordResetToken` & `EmailVerificationToken`**: Security tokens for auth verification flows.
 - **Database Seeder (`prisma/seed.js`):** Script to reset and seed initial testing data (skills, test accounts, internships).
 
-### B. Authentication & Security
+### B. Authentication, Password Reset & Security
 - **Transactional Account & Profile Creation (`src/services/authServices.js`):**
-  - User registration is wrapped in a Prisma `$transaction` block.
-  - Generates the base `User` record and atomically creates the matching role profile (`Student`, `Recruiter`, or `University`).
-  - Validates uniqueness for `email`, `studentId`, and `indexNumber` before creation.
-- **JWT & Hashing (`src/controllers/authController.js`):**
-  - Secure password hashing using `bcryptjs`.
-  - JWT token generation using `jsonwebtoken` with environment secret configuration (`JWT_SECRET`, `JWT_EXPIRES_IN`).
+  - User registration wrapped in a Prisma `$transaction` block, atomically creating matching role profiles (`Student`, `Recruiter`, or `University`).
+- **JWT & Pre-joined Profile Serialization (`src/controllers/authController.js`):**
+  - Password hashing with `bcryptjs` and token signing with `jsonwebtoken`.
+  - `POST /api/auth/login` includes pre-joined profile name details (`firstName`, `lastName`, `companyName`, `universityName`) in the user response.
+- **Password Reset & Verification OTP Engine:**
+  - `POST /api/auth/forgot-password` — Generates 6-digit OTP and dispatches reset instructions.
+  - `POST /api/auth/reset-password` — Validates OTP and updates password.
+  - `POST /api/auth/verify-email` & `POST /api/auth/resend-verification` — Email verification workflows.
+  - `PUT /api/auth/change-password` — Authenticated password change endpoint.
 - **Authorization & Role Middleware (`src/middleware/auth.js`):**
-  - `authenticate`: Extracts Bearer token from headers, verifies JWT signature, and attaches full user object with pre-loaded profile context to `req.user`.
-  - `authorizeRoles(...roles)`: Restricts routes to specified user roles (e.g. `'ADMIN'`, `'UNIVERSITY'`).
+  - `authenticate`: Validates JWT Bearer token and attaches user profile.
+  - `authorizeRoles(...roles)`: Restricts endpoints by role (`ADMIN`, `UNIVERSITY`, `RECRUITER`, `STUDENT`).
 
-### C. Profile REST APIs
-- **Student Profiles (`src/controllers/studentController.js` & `src/routes/studentRoute.js`):**
-  - `GET /api/students` — List all student profiles (University / Admin only).
-  - `GET /api/students/:id` — Fetch specific student profile with skill details.
-  - `PUT /api/students/:id` — Update student profile fields and sync skill tags inside a transaction.
-  - `DELETE /api/students/:id` — Delete student profile and user record (Admin only).
-- **Recruiter Profiles (`src/controllers/recruiterController.js` & `src/routes/recruiterRoute.js`):**
-  - `GET /api/recruiters` — List recruiter accounts.
-  - `GET /api/recruiters/:id` — Get recruiter details with nested company profile.
-  - `PUT /api/recruiters/:id` — Update recruiter details and company profile.
-- **System Health:** `GET /api/health` endpoint returning `{ "status": "OK" }`.
+### C. Cloudinary File Upload Integration
+- **Multer Memory Buffer Middleware (`src/middleware/upload.js`):** Intercepts multipart/form-data uploads without writing to local disk.
+- **Cloudinary SDK Utility (`src/utils/cloudinary.js`):** Upload stream pipeline supporting PDF CVs, profile avatars, and company logos.
+- **Upload Endpoints:**
+  - `POST /api/students/upload-cv` — Upload PDF resume to Cloudinary.
+  - `POST /api/students/upload-avatar` — Upload profile avatar image.
+  - `POST /api/recruiters/upload-logo` — Upload company logo.
+
+### D. Internships & Match Scoring Engine
+- **Internship Management (`src/controllers/internshipController.js` & `src/routes/internshipRoute.js`):**
+  - `POST /api/internships` — Create internship posting with skill requirements.
+  - `GET /api/internships` — List all open internships. When requested by a student, dynamically computes a `matchScore` percentage based on skill tag overlap.
+  - `GET /api/internships/:id` — Fetch internship listing details.
+  - `PUT /api/internships/:id` & `DELETE /api/internships/:id` — Update or delete listing.
+
+### E. Applications Engine
+- **Application Workflows (`src/controllers/applicationController.js` & `src/routes/applicationRoute.js`):**
+  - `POST /api/applications` — Submit application with cover letter.
+  - `GET /api/applications` — Retrieve applications with status filters.
+  - `PATCH /api/applications/:id/status` — Update application status (`PENDING`, `REVIEWING`, `ACCEPTED`, `REJECTED`).
+
+### F. Logbook & Weekly Reports API
+- **Progress Reporting (`src/controllers/reportController.js` & `src/routes/reportRoute.js`):**
+  - `POST /api/reports` — Submit weekly report (validates student active accepted placement).
+  - `GET /api/reports` — List submitted reports for student or supervisor.
+  - `PATCH /api/reports/:id/status` — Supervisor approval/rejection with comments.
+
+### G. University Portal API
+- **Administration & Analytics (`src/controllers/universityController.js` & `src/routes/universityRoute.js`):**
+  - `GET /api/universities/stats` — Aggregated stats (total students, active placements, total applications, verified recruiters, placement rate).
+  - `PATCH /api/universities/recruiters/:id/approve` — Approve recruiter organization profiles.
 
 ---
 
 ## 2. Next Steps & Backend Roadmap
 
-1. **Internship Management API:**
-   - Implement controller, service, and routes for job listings (`POST`, `GET`, `PUT`, `DELETE /api/internships`).
-   - Support filtering/searching listings by title, location, type (Remote/Hybrid/On-Site), and required skill tags.
+1. **Messaging & Conversation API:**
+   - Create models, controllers, and routes for direct messaging between students, recruiters, and university liaisons (`/api/conversations`).
 
-2. **Application & Skill Match Scoring Engine:**
-   - Endpoint for students to apply to internships (`POST /api/applications`).
-   - Match scoring algorithm calculating overlap percentage between `StudentSkill` tags and `InternshipSkill` tags.
-   - Endpoint for recruiters to update application status (`PENDING` -> `REVIEWING` / `ACCEPTED` / `REJECTED`).
+2. **Automated Notification Triggers:**
+   - Wire up notification generation on application status changes and report feedback events (`/api/notifications`).
 
-3. **Weekly Logbook & Progress Report API:**
-   - Endpoints for students to submit weekly reports (`POST /api/reports`).
-   - Endpoints for university supervisors to review reports, add comments, and approve/reject submissions (`PUT /api/reports/:id/status`).
-
-4. **File Storage & Upload Middleware:**
-   - Middleware (e.g. Multer with S3 / Cloudinary / local storage) for managing file uploads: CV PDFs, profile pictures, company logos, and weekly logbook files.
-
-5. **Notification Engine:**
-   - Endpoints to fetch and mark notifications as read (`GET /api/notifications`, `PATCH /api/notifications/:id/read`).
-   - Automated event triggers on application updates and report reviews.
-
-6. **Email Dispatch Integration:**
-   - Configure `nodemailer` to dispatch account verification tokens and password reset link emails.
-
-7. **University Dashboard Backend API:**
-   - Aggregated analytics endpoints for university admins to track overall student attachment ratios and approve recruiter accounts (`isApproved`).
+3. **Production Mailgun DNS Verification:**
+   - Transition Mailgun from Sandbox mode to a custom verified domain for production email dispatch.
