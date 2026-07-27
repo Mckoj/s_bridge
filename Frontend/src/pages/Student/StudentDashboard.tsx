@@ -1,274 +1,555 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../context/AuthContext";
 import { useDashboard } from "../../context/DashboardContext";
-import { LayoutGrid, Clock, CheckCircle2, XCircle, ChevronRight, Check, Calendar, Sparkles } from "lucide-react";
+import {
+  LayoutGrid,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Sparkles,
+  Briefcase,
+  MapPin,
+  Calendar as CalendarIcon,
+  Upload,
+  Bot,
+  UserCheck,
+  Building,
+  ArrowRight,
+  TrendingUp,
+  FileText
+} from "lucide-react";
+import { getStudentStats } from "../../services/studentService";
+import type { StudentStats } from "../../services/studentService";
+import { uploadCV } from "../../services/studentService";
+import { getInternships } from "../../services/internshipService";
+import type { InternshipItem } from "../../services/internshipService";
+import { getApplications, applyToInternship } from "../../services/applicationService";
+import type { ApplicationItem } from "../../services/applicationService";
 
-// ── Theme-aware helpers ───────────────────────────────────────────────────────
-function useTheme() { return useDashboard().theme === "dark"; }
+function useTheme() {
+  return useDashboard().theme === "dark";
+}
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const dark = useTheme();
   return (
-    <div className={`relative overflow-hidden rounded-3xl border shadow-[0_20px_60px_-30px_rgba(15,23,42,0.35)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_-25px_rgba(59,130,246,0.28)]
-      ${dark
-        ? "bg-slate-900/70 border-slate-800/80"
-        : "bg-white/80 border-slate-200/80"
-      } ${className}`}>
-      <div className={`pointer-events-none absolute inset-0 bg-linear-to-br ${dark ? "from-blue-500/10 via-slate-900/40 to-transparent" : "from-blue-100/70 via-white/50 to-transparent"}`} />
+    <div
+      className={`relative overflow-hidden rounded-3xl border shadow-xl backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 ${
+        dark
+          ? "bg-slate-900/80 border-slate-800/80 text-white"
+          : "bg-white/90 border-slate-200/80 text-slate-900"
+      } ${className}`}
+    >
+      <div
+        className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${
+          dark ? "from-blue-500/10 via-transparent to-transparent" : "from-blue-100/50 via-transparent to-transparent"
+        }`}
+      />
       <div className="relative">{children}</div>
     </div>
   );
 }
 
-function Heading({ children }: { children: React.ReactNode }) {
-  const dark = useTheme();
-  return <p className={`text-sm font-bold ${dark ? "text-white" : "text-slate-800"}`}>{children}</p>;
-}
-
-function Muted({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  const dark = useTheme();
-  return <p className={`${dark ? "text-slate-500" : "text-slate-400"} ${className}`}>{children}</p>;
-}
-
-// ── Empty state ───────────────────────────────────────────────────────────────
-function EmptyState({ label }: { label: string }) {
-  const dark = useTheme();
-  return (
-    <p className={`text-[11px] text-center py-4 ${dark ? "text-slate-600" : "text-slate-400"}`}>
-      {label}
-    </p>
-  );
-}
-
-// ── Stat card ─────────────────────────────────────────────────────────────────
-function StatCard({ title, value, subtitle, icon: Icon, iconBg, iconColor }:
-  { title: string; value: string | number; subtitle: string; icon: React.ElementType; iconBg: string; iconColor: string }) {
+function StatCard({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  iconBg,
+  iconColor,
+}: {
+  title: string;
+  value: string | number;
+  subtitle: string;
+  icon: React.ElementType;
+  iconBg: string;
+  iconColor: string;
+}) {
   const dark = useTheme();
   return (
     <Card className="p-5 flex items-center justify-between">
       <div>
-        <Muted className="text-xs font-semibold mb-1">{title}</Muted>
-        <p className={`text-3xl font-extrabold leading-none tabular-nums ${dark ? "text-white" : "text-slate-800"}`}>{value}</p>
-        <Muted className="text-[11px] font-medium mt-1.5">{subtitle}</Muted>
+        <p className={`text-xs font-semibold mb-1 ${dark ? "text-slate-400" : "text-slate-500"}`}>{title}</p>
+        <p className="text-3xl font-extrabold leading-none tabular-nums">{value}</p>
+        <p className={`text-[11px] font-medium mt-1.5 ${dark ? "text-slate-500" : "text-slate-400"}`}>{subtitle}</p>
       </div>
-      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${iconBg} drop-shadow-sm`}>
-        <Icon size={24} className={iconColor} />
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${iconBg} shadow-sm`}>
+        <Icon size={22} className={iconColor} />
       </div>
     </Card>
   );
 }
 
-// ── Application stepper ───────────────────────────────────────────────────────
-interface Step { label: string; date: string; done: boolean }
-
-function ApplicationStepper({ steps }: { steps: Step[] }) {
-  const dark = useTheme();
-  if (steps.length === 0) return <EmptyState label="No active application" />;
-  return (
-    <div className="flex items-start w-full pt-2 pb-1">
-      {steps.map((step, i) => (
-        <React.Fragment key={step.label}>
-          {i > 0 && (
-            <div className={`flex-1 h-0.5 mt-4 mx-1 ${steps[i - 1].done ? "bg-blue-400" : (dark ? "bg-slate-700" : "bg-slate-200")}`} />
-          )}
-          <div className="flex flex-col items-center shrink-0">
-            <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center
-              ${step.done ? "bg-blue-500 border-blue-500" : (dark ? "bg-slate-800 border-slate-600" : "bg-white border-slate-300")}`}>
-              {step.done
-                ? <Check size={13} className="text-white" />
-                : <div className={`w-2 h-2 rounded-full ${dark ? "bg-slate-600" : "bg-slate-300"}`} />}
-            </div>
-            <p className={`text-[9px] font-semibold mt-2 text-center leading-tight ${dark ? "text-slate-400" : "text-slate-600"}`}>{step.label}</p>
-            <p className={`text-[8px] mt-0.5 ${dark ? "text-slate-600" : "text-slate-400"}`}>{step.date}</p>
-          </div>
-        </React.Fragment>
-      ))}
-    </div>
-  );
-}
-
-// ── Task row ──────────────────────────────────────────────────────────────────
-function TaskRow({ title, due }: { title: string; due: string }) {
-  const dark = useTheme();
-  return (
-    <div className={`flex items-center gap-3 py-2.5 border-b last:border-0 px-1 rounded-lg group transition-colors
-      ${dark ? "border-slate-800 hover:bg-slate-800/50" : "border-slate-50 hover:bg-slate-50/50"}`}>
-      <div className="w-1.5 h-8 rounded-full bg-blue-500 shrink-0" />
-      <div className="flex-1 min-w-0">
-        <p className={`text-xs font-semibold leading-snug ${dark ? "text-slate-300" : "text-slate-700"}`}>{title}</p>
-        <p className={`text-[10px] mt-0.5 ${dark ? "text-slate-500" : "text-slate-400"}`}>{due}</p>
-      </div>
-      <ChevronRight size={14} className={`shrink-0 ${dark ? "text-slate-600" : "text-slate-300"}`} />
-    </div>
-  );
-}
-
-// ── Message row ───────────────────────────────────────────────────────────────
-const AVATAR_COLORS = ["bg-blue-500", "bg-purple-500", "bg-emerald-500", "bg-amber-500"];
-
-function MessageRow({ name, preview, time, idx }: { name: string; preview: string; time: string; idx: number }) {
-  const dark = useTheme();
-  return (
-    <div className={`flex items-start gap-3 py-2.5 border-b last:border-0 px-1 rounded-lg transition-colors
-      ${dark ? "border-slate-800 hover:bg-slate-800/50" : "border-slate-50 hover:bg-slate-50/50"}`}>
-      <div className={`w-8 h-8 rounded-full ${AVATAR_COLORS[idx % AVATAR_COLORS.length]} flex items-center justify-center text-white text-[11px] font-bold shrink-0`}>
-        {name[0]}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className={`text-xs font-bold leading-none ${dark ? "text-white" : "text-slate-800"}`}>{name}</p>
-        <p className={`text-[10px] mt-1 truncate ${dark ? "text-slate-500" : "text-slate-400"}`}>{preview}</p>
-      </div>
-      <span className={`text-[9px] shrink-0 mt-0.5 ${dark ? "text-slate-600" : "text-slate-400"}`}>{time}</span>
-    </div>
-  );
-}
-
-// ── Mini Calendar ─────────────────────────────────────────────────────────────
-const DAY_HEADERS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
-const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-
-function MiniCalendar() {
-  const dark     = useTheme();
-  const today    = new Date();
-  const year     = today.getFullYear();
-  const month    = today.getMonth();
-  const todayDate = today.getDate();
-
-  const rawFirst = new Date(year, month, 1).getDay();
-  const offset   = rawFirst === 0 ? 6 : rawFirst - 1;
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells: (number | null)[] = [...Array(offset).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
-  while (cells.length % 7 !== 0) cells.push(null);
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <span className={`text-xs font-bold ${dark ? "text-slate-300" : "text-slate-700"}`}>{MONTH_NAMES[month]} {year}</span>
-      </div>
-      <div className="grid grid-cols-7 mb-1">
-        {DAY_HEADERS.map(d => (
-          <div key={d} className={`text-center text-[9px] font-bold py-0.5 ${dark ? "text-slate-600" : "text-slate-400"}`}>{d}</div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 gap-y-0.5">
-        {cells.map((day, i) => (
-          <div key={i} className="flex items-center justify-center h-6">
-            {day !== null && (
-              <span className={`text-[10px] font-medium w-5 h-5 flex items-center justify-center rounded-full transition-colors
-                ${day === todayDate
-                  ? "bg-blue-500 text-white font-bold"
-                  : dark ? "text-slate-400 hover:bg-slate-700" : "text-slate-600 hover:bg-slate-100"
-                }`}>
-                {day}
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Main ─────────────────────────────────────────────────────────────────────
 export default function StudentDashboard() {
   const { user } = useAuth();
-  const { tasks, studentMessages } = useDashboard();
-  const dark  = useTheme();
-  const raw   = user?.email?.split("@")[0] ?? "Student";
-  const displayName = raw.charAt(0).toUpperCase() + raw.slice(1);
+  const navigate = useNavigate();
+  const dark = useTheme();
 
-  // TODO: derive these counts from backend data (GET /api/student/applications/stats)
-  const totalApplications = 0;
-  const underReview = 0;
-  const accepted = 0;
-  const rejected = 0;
+  const [stats, setStats] = useState<StudentStats>({
+    totalApplications: 0,
+    underReview: 0,
+    accepted: 0,
+    rejected: 0,
+    interviews: 0,
+  });
+  const [internships, setInternships] = useState<InternshipItem[]>([]);
+  const [applications, setApplications] = useState<ApplicationItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // TODO: fetch application steps from GET /api/student/applications/latest
-  const applicationSteps: { label: string; date: string; done: boolean }[] = [];
+  // Application Modal state
+  const [selectedInternship, setSelectedInternship] = useState<InternshipItem | null>(null);
+  const [coverLetter, setCoverLetter] = useState("");
+  const [applying, setApplying] = useState(false);
+  const [applySuccess, setApplySuccess] = useState<string | null>(null);
+
+  // CV Upload state
+  const [cvUploading, setCvUploading] = useState(false);
+  const [cvMsg, setCvMsg] = useState<string | null>(null);
+
+  const rawName = user?.email?.split("@")[0] ?? "Student";
+  const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [statsRes, internshipsRes, appsRes] = await Promise.allSettled([
+        getStudentStats(),
+        getInternships(),
+        getApplications(),
+      ]);
+
+      if (statsRes.status === "fulfilled") setStats(statsRes.value);
+      if (internshipsRes.status === "fulfilled") setInternships(internshipsRes.value);
+      if (appsRes.status === "fulfilled") setApplications(appsRes.value);
+    } catch (err: any) {
+      console.error("Error loading dashboard data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleApply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedInternship) return;
+    setApplying(true);
+    setApplySuccess(null);
+    try {
+      await applyToInternship({
+        internshipId: selectedInternship.id,
+        coverLetter,
+      });
+      setApplySuccess("Application submitted successfully!");
+      setCoverLetter("");
+      setTimeout(() => {
+        setSelectedInternship(null);
+        setApplySuccess(null);
+        fetchData();
+      }, 1500);
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Failed to submit application");
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  const handleCvSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCvUploading(true);
+    setCvMsg(null);
+    try {
+      await uploadCV(file);
+      setCvMsg("CV uploaded successfully!");
+    } catch (err: any) {
+      setCvMsg(err.response?.data?.error || "Failed to upload CV");
+    } finally {
+      setCvUploading(false);
+    }
+  };
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto">
-        <div className={`relative overflow-hidden rounded-[30px] border p-6 shadow-[0_24px_80px_-32px_rgba(37,99,235,0.35)] ${dark ? "border-blue-500/15 bg-slate-900/70" : "border-blue-200/70 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.95)_0%,rgba(239,246,255,0.95)_100%)]"}`}>
-          <div className={`pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.16),transparent_26%)] ${dark ? "opacity-80" : "opacity-100"}`} />
-          <div className="relative space-y-5">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="max-w-7xl mx-auto space-y-6 pb-12">
+        {/* Top Hero Banner & Greeting */}
+        <div
+          className={`relative overflow-hidden rounded-[30px] border p-6 lg:p-8 shadow-2xl ${
+            dark
+              ? "border-blue-500/20 bg-slate-900/80"
+              : "border-blue-200/80 bg-gradient-to-br from-blue-50/90 via-white to-blue-50/50"
+          }`}
+        >
+          <div className="relative space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold ${dark ? "border-blue-500/20 bg-blue-500/10 text-blue-300" : "border-blue-200 bg-blue-50/80 text-blue-700"}`}>
-                  <Sparkles size={13} />
-                  Student experience
+                <div
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold ${
+                    dark
+                      ? "border-blue-500/30 bg-blue-500/10 text-blue-400"
+                      : "border-blue-200 bg-blue-100/80 text-blue-700"
+                  }`}
+                >
+                  <Sparkles size={14} />
+                  S-Bridge Student Portal
                 </div>
-                <h1 className={`mt-3 text-2xl font-extrabold ${dark ? "text-white" : "text-slate-800"}`}>
+                <h1 className="mt-3 text-3xl lg:text-4xl font-extrabold tracking-tight">
                   Welcome back, {displayName}! 👋
                 </h1>
-                <p className={`mt-1 text-sm ${dark ? "text-slate-400" : "text-slate-500"}`}>
-                  Here's what's happening with your internship journey.
+                <p className={`mt-1 text-sm ${dark ? "text-slate-400" : "text-slate-600"}`}>
+                  You're one step closer to your dream career. Here is your real-time placement overview.
                 </p>
+              </div>
+
+              {/* Quick Actions Pills */}
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all">
+                  <Upload size={14} />
+                  {cvUploading ? "Uploading..." : "Upload CV"}
+                  <input type="file" accept=".pdf,.doc,.docx" onChange={handleCvSelect} className="hidden" />
+                </label>
+                <button
+                  onClick={() => navigate("/dashboard/profile")}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
+                    dark
+                      ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <UserCheck size={14} />
+                  Edit Profile
+                </button>
               </div>
             </div>
 
-        {/* Stats — values come from backend */}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-          <StatCard title="Applications"  value={totalApplications} subtitle="Total Applied"    icon={LayoutGrid}  iconBg="bg-blue-50"   iconColor="text-blue-500" />
-          <StatCard title="Under Review"  value={underReview}       subtitle="In Progress"      icon={Clock}       iconBg="bg-orange-50" iconColor="text-orange-500" />
-          <StatCard title="Accepted"      value={accepted}          subtitle="Congratulations!" icon={CheckCircle2} iconBg="bg-green-50"  iconColor="text-green-500" />
-          <StatCard title="Rejected"      value={rejected}          subtitle="Keep Trying"      icon={XCircle}     iconBg="bg-red-50"    iconColor="text-red-500" />
-        </div>
+            {cvMsg && (
+              <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-medium">
+                {cvMsg}
+              </div>
+            )}
 
-        {/* Four panels */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-
-          {/* Application Status */}
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <Heading>Application Status</Heading>
-              <button className={`text-[10px] font-semibold hover:underline whitespace-nowrap ${dark ? "text-blue-300" : "text-blue-600"}`}>
-                View All Applications
+            {/* Next Action Banner */}
+            <div
+              className={`p-4 rounded-2xl border flex flex-wrap items-center justify-between gap-3 ${
+                dark ? "bg-slate-800/60 border-slate-700/60" : "bg-white/80 border-slate-200"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center text-blue-500 font-bold">
+                  <Briefcase size={20} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold">Your Next Action</p>
+                  <p className={`text-xs ${dark ? "text-slate-400" : "text-slate-600"}`}>
+                    {applications.length > 0
+                      ? `You have ${applications.length} active applications. Check status updates below.`
+                      : "No active applications yet. Explore recommended opportunities below!"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => navigate("/dashboard/internship")}
+                className="text-xs font-bold text-blue-500 hover:underline flex items-center gap-1"
+              >
+                Find Opportunities <ArrowRight size={14} />
               </button>
-            </div>
-            <ApplicationStepper steps={applicationSteps} />
-          </Card>
-
-          {/* Upcoming Tasks */}
-          <Card className="p-5">
-            <Heading>Upcoming Tasks</Heading>
-            <div className="mt-3 space-y-0">
-              {tasks.length === 0
-                ? <EmptyState label="No upcoming tasks" />
-                : tasks.map(t => <TaskRow key={t.id} title={t.title} due={t.dueDate} />)
-              }
-            </div>
-          </Card>
-
-          {/* Messages */}
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <Heading>Messages</Heading>
-              <button className={`text-[10px] font-semibold hover:underline ${dark ? "text-blue-300" : "text-blue-600"}`}>View All</button>
-            </div>
-            <div className="space-y-0">
-              {studentMessages.length === 0
-                ? <EmptyState label="No messages yet" />
-                : studentMessages.map((m, idx) => (
-                    <MessageRow key={m.id} idx={idx} name={m.sender} preview={m.content} time={m.time} />
-                  ))
-              }
-            </div>
-          </Card>
-
-          {/* Calendar */}
-          <Card className="p-5">
-            <div className={`flex items-center gap-2 mb-4`}>
-              <Calendar size={15} className={dark ? "text-blue-300" : "text-blue-600"} />
-              <Heading>Calendar</Heading>
-            </div>
-            <MiniCalendar />
-          </Card>
             </div>
           </div>
         </div>
+
+        {/* Metric Stat Cards Row */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <StatCard
+            title="Applications"
+            value={stats.totalApplications || applications.length}
+            subtitle="Total Submitted"
+            icon={LayoutGrid}
+            iconBg="bg-blue-500/10"
+            iconColor="text-blue-500"
+          />
+          <StatCard
+            title="Under Review"
+            value={stats.underReview || applications.filter((a) => a.status === "PENDING" || a.status === "REVIEWING").length}
+            subtitle="In Progress"
+            icon={Clock}
+            iconBg="bg-amber-500/10"
+            iconColor="text-amber-500"
+          />
+          <StatCard
+            title="Accepted"
+            value={stats.accepted || applications.filter((a) => a.status === "ACCEPTED").length}
+            subtitle="Congratulations!"
+            icon={CheckCircle2}
+            iconBg="bg-emerald-500/10"
+            iconColor="text-emerald-500"
+          />
+          <StatCard
+            title="Interviews"
+            value={stats.interviews || 0}
+            subtitle="Scheduled (Coming Soon)"
+            icon={CalendarIcon}
+            iconBg="bg-purple-500/10"
+            iconColor="text-purple-500"
+          />
+          <StatCard
+            title="Rejected"
+            value={stats.rejected || applications.filter((a) => a.status === "REJECTED").length}
+            subtitle="Keep Improving"
+            icon={XCircle}
+            iconBg="bg-red-500/10"
+            iconColor="text-red-500"
+          />
+        </div>
+
+        {/* Main Dashboard Layout Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left 2 Columns: Opportunities & Applications */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Recommended Opportunities */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-base font-bold flex items-center gap-2">
+                    <Sparkles size={18} className="text-blue-500" />
+                    AI Recommended Opportunities
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                      AI Feature • Coming Soon
+                    </span>
+                  </h3>
+                  <p className={`text-xs ${dark ? "text-slate-400" : "text-slate-500"}`}>
+                    Matching roles based on backend skills matrix
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate("/dashboard/internship")}
+                  className="text-xs font-semibold text-blue-500 hover:underline"
+                >
+                  View All
+                </button>
+              </div>
+
+              {loading ? (
+                <div className="py-8 text-center text-xs text-slate-500 animate-pulse">Loading live backend opportunities...</div>
+              ) : internships.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-500 border border-dashed rounded-2xl p-6">
+                  No internship listings posted yet by recruiters.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {internships.slice(0, 4).map((item) => (
+                    <div
+                      key={item.id}
+                      className={`p-4 rounded-2xl border transition-all hover:border-blue-500/40 flex flex-col justify-between space-y-3 ${
+                        dark ? "bg-slate-800/50 border-slate-700/60" : "bg-slate-50/80 border-slate-200"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-start justify-between">
+                          <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold">
+                            <Building size={20} />
+                          </div>
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                            Match Score: Coming Soon
+                          </span>
+                        </div>
+                        <h4 className="mt-3 text-sm font-bold truncate">{item.title}</h4>
+                        <p className={`text-xs font-semibold ${dark ? "text-blue-400" : "text-blue-600"}`}>
+                          {item.recruiter?.companyName || "Partner Company"}
+                        </p>
+                        <div className={`mt-2 flex flex-wrap gap-2 text-[11px] ${dark ? "text-slate-400" : "text-slate-500"}`}>
+                          <span className="flex items-center gap-1">
+                            <MapPin size={12} /> {item.location}
+                          </span>
+                          <span>•</span>
+                          <span>{item.internshipType}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => setSelectedInternship(item)}
+                        className="w-full py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-sm"
+                      >
+                        Apply Now
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            {/* Application Timeline / Active Tracker */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-bold flex items-center gap-2">
+                  <TrendingUp size={18} className="text-blue-500" />
+                  Your Active Applications Tracker
+                </h3>
+                <button
+                  onClick={() => navigate("/dashboard/applications")}
+                  className="text-xs font-semibold text-blue-500 hover:underline"
+                >
+                  View Full Tracker
+                </button>
+              </div>
+
+              {applications.length === 0 ? (
+                <div className="py-6 text-center text-xs text-slate-500">
+                  No submitted applications. Select an opportunity above to apply!
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {applications.slice(0, 3).map((app) => (
+                    <div
+                      key={app.id}
+                      className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 ${
+                        dark ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-100"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold text-xs">
+                          <FileText size={18} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold">{app.internship?.title || "Internship Role"}</p>
+                          <p className={`text-[11px] ${dark ? "text-slate-400" : "text-slate-500"}`}>
+                            {app.internship?.recruiter?.companyName || "Company"} • Applied on{" "}
+                            {new Date(app.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-[10px] font-bold ${
+                          app.status === "ACCEPTED"
+                            ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                            : app.status === "REJECTED"
+                            ? "bg-red-500/15 text-red-400 border border-red-500/30"
+                            : app.status === "WITHDRAWN"
+                            ? "bg-slate-500/15 text-slate-400 border border-slate-500/30"
+                            : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                        }`}
+                      >
+                        {app.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </div>
+
+          {/* Right Column: AI Match Breakdown & Coming Soon Features */}
+          <div className="space-y-6">
+            {/* AI Match Breakdown Card */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold flex items-center gap-2">
+                  <Bot size={18} className="text-blue-500" />
+                  AI Match Score Breakdown
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                  Coming Soon
+                </span>
+              </div>
+              <p className={`text-xs mb-4 ${dark ? "text-slate-400" : "text-slate-500"}`}>
+                Automated matching engine analyzing student profile against employer requirements.
+              </p>
+
+              <div className="space-y-3">
+                {[
+                  { label: "Technical Skills Alignment", pct: 85, color: "bg-blue-500" },
+                  { label: "Academic Performance (GPA)", pct: 75, color: "bg-emerald-500" },
+                  { label: "Project Portfolio Relevance", pct: 60, color: "bg-purple-500" },
+                  { label: "Experience & Coursework", pct: 50, color: "bg-amber-500" },
+                ].map((item) => (
+                  <div key={item.label}>
+                    <div className="flex justify-between text-[11px] font-semibold mb-1">
+                      <span>{item.label}</span>
+                      <span className="text-slate-400">{item.pct}%</span>
+                    </div>
+                    <div className={`h-2 rounded-full overflow-hidden ${dark ? "bg-slate-800" : "bg-slate-200"}`}>
+                      <div className={`h-full ${item.color} rounded-full`} style={{ width: `${item.pct}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* AI Career Assistant Feature Teaser */}
+            <Card className="p-6 border-blue-500/30 bg-gradient-to-br from-blue-900/30 to-slate-900/80">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold">AI Career Assistant</h4>
+                  <span className="text-[10px] font-bold text-blue-400">Coming Soon in Next Phase</span>
+                </div>
+              </div>
+              <p className={`text-xs leading-relaxed ${dark ? "text-slate-400" : "text-slate-600"}`}>
+                Get instant resume optimization tips, mock interview questions, and tailored skill progression paths powered by AI.
+              </p>
+            </Card>
+          </div>
+        </div>
       </div>
+
+      {/* Apply Modal */}
+      {selectedInternship && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
+          <div
+            className={`w-full max-w-lg p-6 rounded-3xl border shadow-2xl ${
+              dark ? "bg-slate-900 border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"
+            }`}
+          >
+            <h3 className="text-lg font-bold">Apply to {selectedInternship.title}</h3>
+            <p className={`text-xs mt-1 ${dark ? "text-slate-400" : "text-slate-600"}`}>
+              Company: {selectedInternship.recruiter?.companyName || "Partner Employer"}
+            </p>
+
+            {applySuccess ? (
+              <div className="my-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs text-center font-bold">
+                {applySuccess}
+              </div>
+            ) : (
+              <form onSubmit={handleApply} className="mt-4 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold mb-1">Cover Letter (Optional)</label>
+                  <textarea
+                    rows={4}
+                    value={coverLetter}
+                    onChange={(e) => setCoverLetter(e.target.value)}
+                    placeholder="Introduce yourself and explain why you're a great fit for this internship..."
+                    className={`w-full p-3 rounded-2xl text-xs border outline-none ${
+                      dark ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200"
+                    }`}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedInternship(null)}
+                    className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-700 text-slate-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={applying}
+                    className="px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+                  >
+                    {applying ? "Submitting..." : "Submit Application"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
