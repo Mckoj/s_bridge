@@ -16,6 +16,7 @@ import {
   X,
   Sparkles,
   Briefcase,
+  Building2,
 } from "lucide-react";
 
 export interface Application {

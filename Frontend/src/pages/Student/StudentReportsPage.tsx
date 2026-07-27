@@ -13,6 +13,7 @@ import {
   Sparkles,
   Calendar,
   X,
+  AlertTriangle,
 } from "lucide-react";
 
 export interface StudentReport {
@@ -34,6 +35,7 @@ export default function StudentReportsPage() {
   const dark = useTheme();
   const [reports, setReports] = useState<StudentReport[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasActivePlacement, setHasActivePlacement] = useState<boolean | null>(null);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -47,14 +49,32 @@ export default function StudentReportsPage() {
 
   useEffect(() => {
     fetchReports();
+    checkActivePlacement();
   }, []);
+
+  const checkActivePlacement = async () => {
+    try {
+      const res = await api.get("/api/students/internship");
+      if (res.data && res.data.id) {
+        setHasActivePlacement(true);
+      } else {
+        setHasActivePlacement(false);
+      }
+    } catch {
+      setHasActivePlacement(false);
+    }
+  };
 
   const fetchReports = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/api/students/reports");
-      if (res.data && Array.isArray(res.data)) {
+      const res = await api.get("/api/reports");
+      if (res.data?.reports && Array.isArray(res.data.reports)) {
+        setReports(res.data.reports);
+      } else if (Array.isArray(res.data)) {
         setReports(res.data);
+      } else {
+        setReports([]);
       }
     } catch {
       setReports([]);
@@ -65,6 +85,11 @@ export default function StudentReportsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (hasActivePlacement === false) {
+      setSubmitError("Cannot submit report: No active accepted internship found for your profile.");
+      return;
+    }
+
     setSubmitError(null);
     setSubmitting(true);
     try {
@@ -75,15 +100,16 @@ export default function StudentReportsPage() {
         fileUrl: fileUrl || undefined,
       };
 
-      const res = await api.post("/api/students/reports", payload);
-      const newReport: StudentReport = res.data || {
-        id: `rep-${Date.now()}`,
-        title,
-        weekNumber,
-        content,
-        fileUrl,
-        submittedAt: new Date().toISOString().split("T")[0],
-        status: "PENDING",
+      const res = await api.post("/api/reports", payload);
+      const created = res.data?.report || res.data;
+      const newReport: StudentReport = {
+        id: created.id || `rep-${Date.now()}`,
+        title: created.title || title,
+        weekNumber: created.weekNumber || weekNumber,
+        content: created.comment || created.content || content,
+        fileUrl: created.fileUrl || fileUrl,
+        submittedAt: created.createdAt ? new Date(created.createdAt).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+        status: created.status || "PENDING",
       };
 
       setReports((prev) => [newReport, ...prev]);
@@ -95,7 +121,7 @@ export default function StudentReportsPage() {
       setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err: any) {
       setSubmitError(
-        err.response?.data?.message || "Failed to submit report. Please try again."
+        err.response?.data?.error || err.response?.data?.message || "Failed to submit report. Please try again."
       );
     } finally {
       setSubmitting(false);
@@ -167,6 +193,17 @@ export default function StudentReportsPage() {
             </button>
           </div>
         </div>
+
+        {/* Active Placement Warning Banner */}
+        {hasActivePlacement === false && (
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold flex items-center gap-3 animate-fade-in">
+            <AlertTriangle size={20} className="shrink-0 text-amber-400" />
+            <div>
+              <span className="font-bold block text-sm">No Active Attachment Assigned</span>
+              <span>Logbook report submissions require an active internship placement. Please apply to available roles or get assigned to a verified placement contract first.</span>
+            </div>
+          </div>
+        )}
 
         {/* Toast Notification */}
         {successMessage && (
