@@ -84,17 +84,8 @@ function StatCard({
 
 export default function StudentDashboard() {
   const { user } = useAuth();
-<<<<<<< HEAD
   const navigate = useNavigate();
   const dark = useTheme();
-=======
-  const { tasks, studentMessages } = useDashboard();
-  const dark  = useTheme();
-  const raw   = user?.email?.split("@")[0] ?? "Student";
-  const displayName = user?.firstName
-    ? user.firstName
-    : (raw.charAt(0).toUpperCase() + raw.slice(1));
->>>>>>> 72e382a434efaa3e6844b931e45131197e2c00ec
 
   const [stats, setStats] = useState<StudentStats>({
     totalApplications: 0,
@@ -118,7 +109,9 @@ export default function StudentDashboard() {
   const [cvMsg, setCvMsg] = useState<string | null>(null);
 
   const rawName = user?.email?.split("@")[0] ?? "Student";
-  const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+  const displayName = user?.firstName
+    ? user.firstName
+    : (rawName.charAt(0).toUpperCase() + rawName.slice(1));
 
   const fetchData = async () => {
     setLoading(true);
