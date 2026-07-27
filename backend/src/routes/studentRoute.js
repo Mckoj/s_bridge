@@ -2,9 +2,25 @@ const express = require('express');
 const router = express.Router();
 const studentController = require('../controllers/studentController');
 const { authenticate, authorizeRoles } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
 // Get all students (accessible by University and System Admins)
 router.get('/', authenticate, authorizeRoles('ADMIN', 'UNIVERSITY'), studentController.getAllStudents);
+
+// Get authenticated student's applications
+router.get('/applications', authenticate, authorizeRoles('STUDENT'), studentController.getStudentApplications);
+
+// Get authenticated student's active internship
+router.get('/internship', authenticate, authorizeRoles('STUDENT'), studentController.getActiveInternship);
+// Get authenticated student's stats
+router.get('/stats', authenticate, authorizeRoles('STUDENT'), studentController.getStudentStats);
+router.get('/me/stats', authenticate, authorizeRoles('STUDENT'), studentController.getStudentStats);
+
+// Upload CV (PDF)
+router.post('/upload-cv', authenticate, authorizeRoles('STUDENT'), upload.single('file'), studentController.uploadCV);
+
+// Upload profile picture
+router.post('/upload-avatar', authenticate, authorizeRoles('STUDENT'), upload.single('file'), studentController.uploadAvatar);
 
 // Get specific student profile
 router.get('/:id', authenticate, studentController.getStudentById);
@@ -16,3 +32,4 @@ router.put('/:id', authenticate, studentController.updateStudent);
 router.delete('/:id', authenticate, authorizeRoles('ADMIN'), studentController.deleteStudent);
 
 module.exports = router;
+

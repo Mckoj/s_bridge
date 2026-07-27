@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useDashboard } from "../../context/DashboardContext";
 import api from "../../services/api";
+import { useNavigate } from "react-router-dom";
 import {
   FileText,
   Search,
@@ -9,12 +10,12 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  Building2,
   MapPin,
   Calendar,
   ChevronRight,
   X,
   Sparkles,
+  Briefcase,
 } from "lucide-react";
 
 export interface Application {
@@ -30,12 +31,33 @@ export interface Application {
   matchScore?: number;
 }
 
+export interface InternshipItem {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  internshipType: string;
+  salary?: number;
+  duration: string;
+  recruiter: {
+    companyName: string;
+    companyWebsite?: string;
+    companyProfile?: {
+      logoUrl?: string;
+      address?: string;
+      industry?: string;
+    };
+  };
+  skills: { skill: { name: string } }[];
+}
+
 function useTheme() {
   return useDashboard().theme === "dark";
 }
 
 export default function StudentApplicationsPage() {
   const dark = useTheme();
+  const navigate = useNavigate();
   const { searchQuery, setSearchQuery } = useDashboard();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,26 +65,32 @@ export default function StudentApplicationsPage() {
   const [search, setSearch] = useState(searchQuery);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
 
+
   useEffect(() => {
     setSearch(searchQuery);
   }, [searchQuery]);
 
   useEffect(() => {
-    const fetchApplications = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get("/api/students/applications");
-        if (res.data && Array.isArray(res.data)) {
-          setApplications(res.data);
-        }
-      } catch {
-        setApplications([]);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchApplications();
   }, []);
+
+  const fetchApplications = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/api/students/applications");
+      if (res.data && Array.isArray(res.data)) {
+        setApplications(res.data);
+      }
+    } catch {
+      setApplications([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenExploreModal = () => {
+    navigate("/dashboard/explore");
+  };
 
   const handleSearchChange = (val: string) => {
     setSearch(val);
@@ -80,6 +108,7 @@ export default function StudentApplicationsPage() {
       app.location.toLowerCase().includes(effectiveSearch);
     return matchesFilter && matchesSearch;
   });
+
 
   const getStatusBadge = (status: Application["status"]) => {
     switch (status) {
@@ -148,6 +177,14 @@ export default function StudentApplicationsPage() {
                 Track status updates and interview invitations for your internship submissions.
               </p>
             </div>
+
+            <button
+              onClick={handleOpenExploreModal}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-lg shadow-blue-500/20 transition-all cursor-pointer self-start sm:self-center"
+            >
+              <Briefcase size={15} />
+              <span>Explore Opportunities</span>
+            </button>
           </div>
 
           {/* Search & Filter Toolbar */}
@@ -222,13 +259,13 @@ export default function StudentApplicationsPage() {
                 ? "No applications match your current search or status filter."
                 : "You haven't submitted any internship applications yet. Explore available roles to apply."}
             </p>
-            <a
-              href="/#solution"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-lg shadow-blue-500/20 transition-all"
+            <button
+              onClick={handleOpenExploreModal}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-lg shadow-blue-500/20 transition-all cursor-pointer"
             >
-              <span>Explore Internships</span>
+              <span>Explore Available Internships</span>
               <ChevronRight size={14} />
-            </a>
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -315,7 +352,7 @@ export default function StudentApplicationsPage() {
                   <span className="text-slate-400">Date Applied:</span>
                   <span className="font-semibold">{selectedApp.appliedDate}</span>
                 </div>
-                {selectedApp.matchScore && (
+                {selectedApp.matchScore !== undefined && (
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400">Skill Match Score:</span>
                     <span className="font-bold text-emerald-400">{selectedApp.matchScore}%</span>

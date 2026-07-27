@@ -1,5 +1,7 @@
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const prisma = require('../config/db');
+const { sendVerificationEmail } = require('../utils/email');
 
 const register = async (email, password, role, profileData = {}) => {
     const existingUser = await prisma.user.findUnique({
@@ -45,12 +47,20 @@ const register = async (email, password, role, profileData = {}) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Generate verification token and 6-digit OTP
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    // Combine token and OTP with a colon delimiter for storage
+    const storedToken = `${verificationToken}:${otpCode}`;
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
     const result = await prisma.$transaction(async (tx) => {
         const newUser = await tx.user.create({
             data: {
                 email,
                 passwordHash: hashedPassword,
-                role: role || "STUDENT"
+                role: role || "STUDENT",
+                isVerified: false
             }
         });
 
@@ -83,16 +93,32 @@ const register = async (email, password, role, profileData = {}) => {
             });
         }
 
+        // Save email verification token record
+        await tx.emailVerificationToken.create({
+            data: {
+                userId: newUser.id,
+                email: newUser.email,
+                token: storedToken,
+                expiresAt
+            }
+        });
+
         return {
             id: newUser.id,
             email: newUser.email,
             role: newUser.role,
+            isVerified: newUser.isVerified,
             createdAt: newUser.createdAt,
             profile
         };
     });
 
+    // Dispatch verification email (non-blocking)
+    sendVerificationEmail(email, verificationToken, otpCode).catch((err) => {
+        console.error('Failed to send verification email:', err);
+    });
+
     return result;
-}
+};
 
 module.exports = { register };

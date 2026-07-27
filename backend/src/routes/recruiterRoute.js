@@ -2,9 +2,17 @@ const express = require('express');
 const router = express.Router();
 const recruiterController = require('../controllers/recruiterController');
 const { authenticate, authorizeRoles } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
 // Get all recruiters (Admin & University only)
 router.get('/', authenticate, authorizeRoles('ADMIN', 'UNIVERSITY'), recruiterController.getAllRecruiters);
+
+// Get recruiter stats
+router.get('/stats', authenticate, recruiterController.getRecruiterStats);
+router.get('/me/stats', authenticate, recruiterController.getRecruiterStats);
+
+// Upload company logo
+router.post('/upload-logo', authenticate, authorizeRoles('RECRUITER'), upload.single('file'), recruiterController.uploadLogo);
 
 // Get recruiter details by ID
 router.get('/:id', authenticate, recruiterController.getRecruiterById);
