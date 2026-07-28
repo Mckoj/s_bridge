@@ -24,6 +24,7 @@ import {
   X,
   PlusSquare,
   ClipboardList,
+  BookOpen,
 } from "lucide-react";
 
 const roleNav = {
@@ -33,6 +34,7 @@ const roleNav = {
     { label: "My Applications",     icon: FileText,        path: "/dashboard/applications" },
     { label: "Interviews",          icon: CheckSquare,     path: "/dashboard/interviews" },
     { label: "Placement History",   icon: Briefcase,       path: "/dashboard/placement-history" },
+    { label: "Logbook Reports",     icon: BookOpen,        path: "/dashboard/reports" },
     { label: "AI Career Assistant", icon: Sparkles,        path: "/dashboard/ai-assistant" },
     { label: "Messages",            icon: MessageSquare,   path: "/dashboard/messages" },
     { label: "Notifications",       icon: Bell,            path: "/dashboard/notifications" },
