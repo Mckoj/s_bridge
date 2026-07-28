@@ -7,11 +7,10 @@ import {
   LayoutGrid,
   Clock,
   CheckCircle2,
-  XCircle,
   Sparkles,
   Briefcase,
   MapPin,
-  Calendar as CalendarIcon,
+  FileCheck2,
   Upload,
   Bot,
   UserCheck,
@@ -20,9 +19,8 @@ import {
   TrendingUp,
   FileText
 } from "lucide-react";
-import { getStudentStats } from "../../services/studentService";
+import { getStudentStats, validateCVFile, uploadCV } from "../../services/studentService";
 import type { StudentStats } from "../../services/studentService";
-import { uploadCV } from "../../services/studentService";
 import { getInternships } from "../../services/internshipService";
 import type { InternshipItem } from "../../services/internshipService";
 import { getApplications, applyToInternship } from "../../services/applicationService";
@@ -95,8 +93,7 @@ export default function StudentDashboard() {
     totalApplications: 0,
     underReview: 0,
     accepted: 0,
-    rejected: 0,
-    interviews: 0,
+    submittedReports: 0,
   });
   const [internships, setInternships] = useState<InternshipItem[]>([]);
   const [applications, setApplications] = useState<ApplicationItem[]>([]);
@@ -162,13 +159,20 @@ export default function StudentDashboard() {
   const handleCvSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Frontend validation: PDF only, max 5 MB
+    const validationError = validateCVFile(file);
+    if (validationError) {
+      setCvMsg(validationError);
+      e.target.value = ""; // reset file input
+      return;
+    }
     setCvUploading(true);
     setCvMsg(null);
     try {
       await uploadCV(file);
       setCvMsg("CV uploaded successfully!");
     } catch (err: any) {
-      setCvMsg(err.response?.data?.error || "Failed to upload CV");
+      setCvMsg(err.response?.data?.error || "Failed to upload CV. Please try again.");
     } finally {
       setCvUploading(false);
     }
@@ -211,7 +215,13 @@ export default function StudentDashboard() {
                 <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all">
                   <Upload size={14} />
                   {cvUploading ? "Uploading..." : "Upload CV"}
-                  <input type="file" accept=".pdf,.doc,.docx" onChange={handleCvSelect} className="hidden" />
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={handleCvSelect}
+                    className="hidden"
+                    aria-label="Upload CV — PDF only, max 5 MB"
+                  />
                 </label>
                 <button
                   onClick={() => navigate("/dashboard/profile")}
@@ -262,11 +272,11 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Metric Stat Cards Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* Metric Stat Cards Row — backed by real backend data via mapStudentStats() */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Applications"
-            value={stats.totalApplications || applications.length}
+            value={stats.totalApplications}
             subtitle="Total Submitted"
             icon={LayoutGrid}
             iconBg="bg-blue-500/10"
@@ -274,35 +284,27 @@ export default function StudentDashboard() {
           />
           <StatCard
             title="Under Review"
-            value={stats.underReview || applications.filter((a) => a.status === "PENDING" || a.status === "REVIEWING").length}
-            subtitle="In Progress"
+            value={stats.underReview}
+            subtitle="Awaiting Decision"
             icon={Clock}
             iconBg="bg-amber-500/10"
             iconColor="text-amber-500"
           />
           <StatCard
             title="Accepted"
-            value={stats.accepted || applications.filter((a) => a.status === "ACCEPTED").length}
+            value={stats.accepted}
             subtitle="Congratulations!"
             icon={CheckCircle2}
             iconBg="bg-emerald-500/10"
             iconColor="text-emerald-500"
           />
           <StatCard
-            title="Interviews"
-            value={stats.interviews || 0}
-            subtitle="Scheduled (Coming Soon)"
-            icon={CalendarIcon}
+            title="Reports Submitted"
+            value={stats.submittedReports}
+            subtitle="Logbook Entries"
+            icon={FileCheck2}
             iconBg="bg-purple-500/10"
             iconColor="text-purple-500"
-          />
-          <StatCard
-            title="Rejected"
-            value={stats.rejected || applications.filter((a) => a.status === "REJECTED").length}
-            subtitle="Keep Improving"
-            icon={XCircle}
-            iconBg="bg-red-500/10"
-            iconColor="text-red-500"
           />
         </div>
 
