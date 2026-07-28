@@ -3,7 +3,14 @@
 > **Parent Doc:** [README.md](./README.md)
 > **Source files:**
 > - [`src/hooks/useScrollAnimation.ts`](../src/hooks/useScrollAnimation.ts)
+> - [`src/hooks/useStudentStats.ts`](../src/hooks/useStudentStats.ts)
+> - [`src/hooks/useStudentInterviews.ts`](../src/hooks/useStudentInterviews.ts)
+> - [`src/hooks/useSavedJobs.ts`](../src/hooks/useSavedJobs.ts)
 > - [`src/services/api.ts`](../src/services/api.ts)
+> - [`src/services/studentService.ts`](../src/services/studentService.ts)
+> - [`src/services/interviewService.ts`](../src/services/interviewService.ts)
+> - [`src/services/savedJobsService.ts`](../src/services/savedJobsService.ts)
+> - [`src/utils/apiErrors.ts`](../src/utils/apiErrors.ts)
 > - [`src/constants/navigation.ts`](../src/constants/navigation.ts)
 > - [`src/constants/colors.ts`](../src/constants/colors.ts)
 
@@ -27,31 +34,60 @@ function MySection() {
 }
 ```
 
-**What it does:**
-1. Creates a `ref` using `useRef<T>(null)`
-2. On mount, runs `gsap.fromTo(el, { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.9, ease: "power3.out" })`
-3. `ScrollTrigger` starts the animation when the element's **top edge hits 85%** of the viewport height (`start: "top 85%"`)
-4. `once: true` means the animation only plays once (not replayed on scroll up)
-5. Returns a `gsap.context()` cleanup in the `useEffect` return to prevent memory leaks
+---
 
-**Animation parameters:**
+### `useStudentStats()` ⭐ New
 
-| Property | Value | Notes |
-|----------|-------|-------|
-| `from.opacity` | `0` | Starts invisible |
-| `from.y` | `60` | Starts 60px below natural position |
-| `to.opacity` | `1` | Fully visible |
-| `to.y` | `0` | Natural position |
-| `duration` | `0.9s` | Total animation time |
-| `ease` | `power3.out` | Fast start, gentle deceleration |
-| `trigger start` | `"top 85%"` | Fires when element top is 85% down viewport |
-| `once` | `true` | Does not replay |
+**File:** [`src/hooks/useStudentStats.ts`](../src/hooks/useStudentStats.ts)
 
-**Generic parameter:** `T extends HTMLElement` defaults to `HTMLDivElement`. Can be used on any DOM element type:
-```ts
-const ref = useScrollAnimation<HTMLElement>();   // for a section
-const ref = useScrollAnimation<HTMLUListElement>(); // for a list
+Fetches dashboard statistics from `GET /api/students/stats` and maps backend field names to the frontend model.
+
+```tsx
+const { stats, loading, error, refetch } = useStudentStats();
 ```
+
+**Returns:**
+
+| Field | Type | Description |
+|---|---|---|
+| `stats` | `StudentStats` | Mapped frontend stats object |
+| `loading` | `boolean` | True while request is in flight |
+| `error` | `ClassifiedApiError \| null` | Typed error or null |
+| `refetch` | `() => void` | Re-trigger the fetch |
+
+**Backend → Frontend field mapping (via `mapStudentStats()`):**
+
+| Backend | Frontend |
+|---|---|
+| `pendingReviews` | `underReview` |
+| `acceptedOffers` | `accepted` |
+| `submittedReports` | `submittedReports` |
+
+---
+
+### `useStudentInterviews()` ⭐ New
+
+**File:** [`src/hooks/useStudentInterviews.ts`](../src/hooks/useStudentInterviews.ts)
+
+> ⚠️ `GET /api/students/interviews` is **Phase 3** and not yet deployed. This hook gracefully returns `interviews: []` until the endpoint exists.
+
+```tsx
+const { interviews, loading, error, refetch } = useStudentInterviews();
+```
+
+---
+
+### `useSavedJobs()` ⭐ New
+
+**File:** [`src/hooks/useSavedJobs.ts`](../src/hooks/useSavedJobs.ts)
+
+> ⚠️ `GET /api/students/saved-jobs` is **Phase 2** and not yet deployed. This hook gracefully returns `savedJobs: []` until the endpoint exists.
+
+```tsx
+const { savedJobs, loading, error, removingId, handleRemove, refetch } = useSavedJobs();
+```
+
+`handleRemove(id)` calls `DELETE /api/students/saved-jobs/:id` and updates local state on success.
 
 ---
 
@@ -72,51 +108,113 @@ const api = axios.create({
 
 #### Request Interceptor — Auto-attach JWT
 
-```ts
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-```
-
-Every outgoing request automatically includes the stored JWT in the `Authorization` header. No manual token passing is needed in any component.
+Every outgoing request automatically includes the stored JWT in the `Authorization` header.
 
 #### Response Interceptor — Global 401 Handler
 
-```ts
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+If **any** API call returns a `401 Unauthorized`, the interceptor clears `token` and `user` from `localStorage` and hard-redirects to `/login`.
+
+---
+
+### `studentService.ts` ⭐ Updated
+
+**File:** [`src/services/studentService.ts`](../src/services/studentService.ts)
+
+Core student API layer. All backend field-name transformations live here.
+
+**Key exports:**
+
+| Export | Purpose |
+|---|---|
+| `BackendStudentStats` | Exact DTO matching backend `/api/students/stats` response |
+| `StudentStats` | Normalized frontend model |
+| `isBackendStudentStats(data)` | Runtime type guard — validates response before mapping |
+| `mapStudentStats(raw)` | Transforms backend DTO → frontend model |
+| `validateCVFile(file)` | Returns error string if file is not PDF or exceeds 5 MB |
+| `validateAvatarFile(file)` | Returns error string if image MIME type or size is invalid |
+| `getStudentStats()` | Fetches stats, validates, maps, and returns `StudentStats` |
+| `uploadCV(file)` | POST `/api/students/upload-cv` — PDF only, enforced by `validateCVFile` |
+
+**Runtime validation flow:**
+
+```
+GET /api/students/stats
+↓
+isBackendStudentStats(raw)   ← validates shape at runtime
+↓ (passes)
+mapStudentStats(raw)          ← transforms field names
+↓
+StudentStats                  ← consumed by useStudentStats() hook
+↓
+Dashboard StatCards
 ```
 
-If **any** API call returns a `401 Unauthorized`, the interceptor:
-1. Clears `token` and `user` from `localStorage`
-2. Hard-redirects to `/login`
+If `isBackendStudentStats()` fails (backend payload changed unexpectedly), the function logs a warning and returns a safe zero-state instead of crashing.
 
-This handles session expiry without needing to check 401s in every component.
+---
 
-#### Usage
+### `interviewService.ts` ⭐ New
 
+**File:** [`src/services/interviewService.ts`](../src/services/interviewService.ts)
+
+Isolated service for `GET /api/students/interviews` (Phase 3, not yet deployed).
+
+**Error handling:**
+
+| HTTP Status | Behaviour |
+|---|---|
+| `200` | Returns `InterviewItem[]` |
+| `404 / 501` | Returns `[]` — endpoint not yet deployed |
+| `403` | Re-throws `FORBIDDEN` — UI shows "Access Denied" |
+| `500+` | Re-throws `SERVER_ERROR` — UI shows error state + retry |
+| No response | Re-throws `NETWORK_ERROR` — UI shows "Connection failed" + retry |
+
+---
+
+### `savedJobsService.ts` ⭐ New
+
+**File:** [`src/services/savedJobsService.ts`](../src/services/savedJobsService.ts)
+
+Isolated service for `GET /api/students/saved-jobs` (Phase 2, not yet deployed).
+
+Same error handling strategy as `interviewService.ts`.
+
+---
+
+## Utilities (`src/utils/`)
+
+### `apiErrors.ts` ⭐ New
+
+**File:** [`src/utils/apiErrors.ts`](../src/utils/apiErrors.ts)
+
+Centralized HTTP error classification utility. Converts raw Axios errors into structured `ClassifiedApiError` objects with a typed `code` field.
+
+**Error codes:**
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `UNAUTHORIZED` | 401 | Session expired — sign in again |
+| `FORBIDDEN` | 403 | No permission to access resource |
+| `NOT_FOUND` | 404 | Feature / resource not yet available |
+| `NOT_IMPLEMENTED` | 501 | Server endpoint not implemented |
+| `SERVER_ERROR` | 5xx | Backend failure |
+| `NETWORK_ERROR` | — | No response received |
+| `UNKNOWN` | other | Unexpected status code |
+
+The `isEndpointUnavailable` flag is `true` for `NOT_FOUND` and `NOT_IMPLEMENTED` — services use this to return empty data instead of throwing.
+
+**Usage in services:**
 ```ts
-import api from "../services/api";
+} catch (err) {
+  const classified = classifyApiError(err);
+  if (classified.isEndpointUnavailable) return []; // not deployed yet
+  throw classified;                                 // real error — let UI handle
+}
+```
 
-// In AuthContext:
-const response = await api.post("/api/auth/login", { email, password });
-
-// Future usage (Dashboard API calls):
-const data = await api.get("/api/students");
-const data = await api.put(`/api/students/${id}`, updatePayload);
+**Usage in ErrorState component:**
+```tsx
+<ErrorState error={classified} onRetry={refetch} />
 ```
 
 ---
@@ -125,39 +223,34 @@ const data = await api.put(`/api/students/${id}`, updatePayload);
 
 ### `navigation.ts`
 
-**File:** [`src/constants/navigation.ts`](../src/constants/navigation.ts)
-
-Defines the landing page anchor navigation links used by `Navbar.tsx`:
-
-```ts
-export const NAVIGATION = [
-  { name: "Home",         href: "#home" },
-  { name: "Problem",      href: "#problem" },
-  { name: "Solution",     href: "#solution" },
-  { name: "How It Works", href: "#how-it-works" },
-];
-```
-
-These map to `id` attributes on the corresponding landing section elements. Smooth scrolling is handled by Lenis (configured in `main.tsx`).
-
----
+Defines the landing page anchor navigation links used by `Navbar.tsx`.
 
 ### `colors.ts`
 
-**File:** [`src/constants/colors.ts`](../src/constants/colors.ts)
-
-Brand colour constants for use in charts, SVG elements, or anywhere Tailwind class strings aren't applicable (e.g. inline styles for SVG `stroke`/`fill`).
-
-> The specific values are defined in this file and consumed by chart components like `DonutChart.tsx` and `LineChart.tsx`.
+Brand colour constants for charts and SVG elements.
 
 ---
 
 ## Planned but Empty Directories
 
 | Directory | Intended Purpose |
-|-----------|-----------------|
+|---|---|
 | `src/types/` | Shared TypeScript interface / type definitions (API response shapes, shared models) |
-| `src/utils/` | Pure utility functions (e.g. date formatting, string helpers, file size formatting) |
-| `src/config/` | App-wide configuration objects (e.g. feature flags, environment config) |
-| `src/lib/` | Third-party library wrappers or shared initialisation (e.g. a configured `dayjs` instance) |
-| `src/shared/` | Shared domain-specific logic (e.g. role permissions, route matchers) |
+| `src/utils/` | Pure utility functions — `apiErrors.ts` now lives here |
+| `src/config/` | App-wide configuration objects (feature flags, environment config) |
+| `src/lib/` | Third-party library wrappers or shared initialisation |
+| `src/shared/` | Shared domain-specific logic (role permissions, route matchers) |
+
+> **Future refactor:** As the codebase grows, consider grouping services by feature domain:
+> ```
+> services/
+>   student/
+>     studentService.ts
+>     interviewService.ts
+>     savedJobsService.ts
+>   university/
+>     universityService.ts
+>   recruiter/
+>     recruiterService.ts
+> ```
+> This is not required at current scale but will help as the recruiter portal expands.

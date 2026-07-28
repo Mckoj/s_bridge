@@ -24,6 +24,10 @@ src/components/
 │   ├── DonutChart.tsx
 │   ├── LineChart.tsx
 │   └── MetricCard.tsx
+├── student/                 ⭐ New — shared Student Portal components
+│   ├── EmptyState.tsx       # Reusable empty state with icon, title, description, actions
+│   ├── LoadingSkeleton.tsx  # Animated skeleton cards (list or grid layout)
+│   └── ErrorState.tsx       # Typed HTTP error display with code-specific icons + retry
 ├── landing/
 │   ├── Navbar.tsx
 │   ├── Hero.tsx
@@ -225,7 +229,99 @@ All landing section components are self-contained. They import from `components/
 
 ---
 
-## `DebugMenu.tsx`
+## Student Components (`components/student/`) ⭐ New
+
+Shared components used across all Student Portal pages to provide consistent loading, empty, and error states. All three are theme-aware — they read `theme` from `DashboardContext`.
+
+### `EmptyState.tsx`
+
+**File:** [`src/components/student/EmptyState.tsx`](../src/components/student/EmptyState.tsx)
+
+Displayed when an API call succeeds but returns no data.
+
+**Props:**
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `icon` | `React.ReactNode` | ✅ | Icon to display in the badge (Lucide icon element) |
+| `title` | `string` | ✅ | Short heading |
+| `description` | `string` | ✅ | Explanatory sub-text |
+| `action` | `{ label, onClick }` | — | Primary CTA button |
+| `secondaryAction` | `{ label, onClick }` | — | Secondary button |
+
+**Usage:**
+```tsx
+<EmptyState
+  icon={<Bookmark size={32} />}
+  title="No Saved Jobs Yet"
+  description="Browse the marketplace and save opportunities to find them here."
+  action={{ label: "Browse Opportunities", onClick: () => navigate("/dashboard/explore") }}
+/>
+```
+
+**Consistency rule:** Every Student Portal page that can have zero results must use this component. Do not render `null` or a plain `<p>` for empty states.
+
+---
+
+### `LoadingSkeleton.tsx`
+
+**File:** [`src/components/student/LoadingSkeleton.tsx`](../src/components/student/LoadingSkeleton.tsx)
+
+Displayed while an API request is in flight. Uses `animate-pulse` for the loading animation.
+
+**Props:**
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `count` | `number` | `3` | Number of skeleton cards to render |
+| `layout` | `"list" \| "grid"` | `"list"` | Card arrangement (single column vs 2-column grid) |
+
+**Design principle:** The skeleton should resemble the final populated card layout. Match the number of skeleton cards to the expected number of data items.
+
+```tsx
+// For a list page (e.g. Interviews)
+<LoadingSkeleton count={3} layout="list" />
+
+// For a grid page (e.g. Saved Jobs)
+<LoadingSkeleton count={4} layout="grid" />
+```
+
+---
+
+### `ErrorState.tsx`
+
+**File:** [`src/components/student/ErrorState.tsx`](../src/components/student/ErrorState.tsx)
+
+Displayed when an API call fails. Accepts a `ClassifiedApiError` from `src/utils/apiErrors.ts` for code-specific rendering, or a plain string for simple messages.
+
+**Props:**
+
+| Prop | Type | Description |
+|---|---|---|
+| `error` | `ClassifiedApiError \| string` | Structured error object (preferred) or plain string |
+| `onRetry` | `() => void` | Optional retry callback. Not shown for `403`/`401` (retrying won't help). |
+
+**Error code → visual mapping:**
+
+| Code | Icon | Background colour |
+|---|---|---|
+| `NETWORK_ERROR` | WifiOff | Amber |
+| `FORBIDDEN` | ShieldX | Orange |
+| `UNAUTHORIZED` | Lock | Yellow |
+| `SERVER_ERROR` / others | AlertTriangle | Red |
+
+```tsx
+// With ClassifiedApiError (preferred — rich messaging)
+const { error, refetch } = useStudentInterviews();
+<ErrorState error={error} onRetry={refetch} />
+
+// With plain string (simple usage)
+<ErrorState error="Could not load data." onRetry={handleRetry} />
+```
+
+**Retry suppression:** The retry button is hidden for `FORBIDDEN` and `UNAUTHORIZED` errors because retrying those is pointless — the user needs to sign in or contact an admin.
+
+---
 
 **File:** [`src/components/DebugMenu.tsx`](../src/components/DebugMenu.tsx)
 
