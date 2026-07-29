@@ -100,6 +100,7 @@ const studentRoutes = (
     <Route path="/dashboard/explore"          element={<ProtectedRoute><ExploreOpportunitiesPage /></ProtectedRoute>} />
     <Route path="/dashboard/interviews"       element={<ProtectedRoute><StudentInterviewsPage /></ProtectedRoute>} />
     <Route path="/dashboard/placement-history"element={<ProtectedRoute><StudentPlacementHistoryPage /></ProtectedRoute>} />
+    <Route path="/dashboard/reports"          element={<ProtectedRoute><StudentReportsPage /></ProtectedRoute>} />
     <Route path="/dashboard/ai-assistant"     element={<ProtectedRoute><StudentAICareerAssistantPage /></ProtectedRoute>} />
     <Route path="/dashboard/saved-jobs"       element={<ProtectedRoute><StudentSavedJobsPage /></ProtectedRoute>} />
     <Route path="/dashboard/resume-analyzer"  element={<ProtectedRoute><StudentResumeAnalyzerPage /></ProtectedRoute>} />
@@ -170,8 +171,8 @@ export default function AppRouter() {
               <Route path="/"          element={<PortalLanding portal="student" />} />
               {authRoutes}
               <Route path="/dashboard" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
-              {sharedRoleRoutes}
               {studentRoutes}
+              {sharedRoleRoutes}
               {subPageRoute}
               <Route path="*"          element={<Navigate to="/" replace />} />
             </>

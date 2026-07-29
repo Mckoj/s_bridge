@@ -1,7 +1,7 @@
 # SBridge Frontend — Documentation Index
 
 > **Scope:** Frontend  · **Stack:** React 19 + Vite + TypeScript + Tailwind CSS v4
-> **Last Updated:** July 2026 · **Version:** 1.2.0
+> **Last Updated:** July 2026 · **Version:** 1.3.0
 
 ---
 
@@ -17,8 +17,8 @@
 | 06 | [06_LAYOUTS.md](./06_LAYOUTS.md) | `DashboardLayout`, `AuthLayout`, `MainLayout` |
 | 07 | [07_LANDING_PAGES.md](./07_LANDING_PAGES.md) | Main landing page + per-portal `PortalLanding` |
 | 08 | [08_DASHBOARDS.md](./08_DASHBOARDS.md) | Full Student & University Portal pages + Recruiter dashboard |
-| 09 | [09_COMPONENTS.md](./09_COMPONENTS.md) | All shared UI components — auth, common, dashboard, landing |
-| 10 | [10_HOOKS_SERVICES_CONSTANTS.md](./10_HOOKS_SERVICES_CONSTANTS.md) | Services (`studentService`, `universityService`, `applicationService`, etc.), `api.ts` |
+| 09 | [09_COMPONENTS.md](./09_COMPONENTS.md) | All shared UI components — auth, common, dashboard, landing, **student (EmptyState, LoadingSkeleton, ErrorState)** |
+| 10 | [10_HOOKS_SERVICES_CONSTANTS.md](./10_HOOKS_SERVICES_CONSTANTS.md) | Services, **custom hooks (useStudentStats, useStudentInterviews, useSavedJobs)**, api.ts, **apiErrors.ts** |
 | 11 | [11_STYLING_AND_ANIMATIONS.md](./11_STYLING_AND_ANIMATIONS.md) | `index.css`, Tailwind v4 utilities, keyframe animations |
 | 12 | [12_PENDING_AND_TODOS.md](./12_PENDING_AND_TODOS.md) | Completed deliverables, remaining tasks, next steps |
 
@@ -42,7 +42,9 @@ Frontend/
 │   │
 │   ├── services/
 │   │   ├── api.ts                # Axios instance + JWT auth header interceptors
-│   │   ├── studentService.ts     # Student profile, applications, stats, CV upload
+│   │   ├── studentService.ts     # Student profile, stats (with DTO + mapper + runtime guard), CV upload
+│   │   ├── interviewService.ts   # ⭐ NEW — Phase 3 interviews (graceful 404 handling)
+│   │   ├── savedJobsService.ts   # ⭐ NEW — Phase 2 saved jobs (graceful 404 handling)
 │   │   ├── universityService.ts  # University stats, roster, recruiter approvals
 │   │   ├── internshipService.ts  # Internship listings search & filters
 │   │   ├── applicationService.ts # Application submission & timeline tracking
@@ -101,8 +103,26 @@ Frontend/
 │   │   └── Recruiter/
 │   │       └── CompanyDashboard.tsx
 │   │
+│   │
+│   ├── hooks/
+│   │   ├── useScrollAnimation.ts    # GSAP scroll-triggered fade-in animation
+│   │   ├── useStudentStats.ts       # ⭐ NEW — Fetch + map dashboard stats
+│   │   ├── useStudentInterviews.ts  # ⭐ NEW — Fetch interviews (graceful until Phase 3)
+│   │   └── useSavedJobs.ts          # ⭐ NEW — Fetch + remove saved jobs (graceful until Phase 2)
+│   │
+│   ├── utils/
+│   │   └── apiErrors.ts             # ⭐ NEW — classifyApiError(), ClassifiedApiError, ApiErrorCode
+│   │
 │   ├── layouts/
 │   │   ├── DashboardLayout.tsx   # Sidebar + topbar layout with theme toggling
 │   │   ├── AuthLayout.tsx        # Centred auth container
 │   │   └── MainLayout.tsx
+│   │
+│   └── components/
+│       ├── auth/                 # AuthCard, AuthInput, AuthButton, ProtectedRoute
+│       ├── common/               # Button, Card, Container, SectionTitle
+│       ├── dashboard/            # MetricCard, DonutChart, LineChart, CalendarWidget
+│       ├── student/              # ⭐ NEW — EmptyState, LoadingSkeleton, ErrorState
+│       ├── landing/              # Navbar, Hero, Problem, Solution, Features, ...
+│       └── DebugMenu.tsx
 ```

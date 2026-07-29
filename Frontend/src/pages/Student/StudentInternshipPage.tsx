@@ -274,7 +274,7 @@ export default function StudentInternshipPage() {
                 </div>
               </div>
 
-              {/* University Supervisor */}
+              {/* University Supervisor / Coordinator */}
               <div
                 className={`rounded-[24px] border p-6 space-y-4 ${
                   dark
@@ -289,33 +289,52 @@ export default function StudentInternshipPage() {
                 >
                   University Liaison
                 </h3>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 font-bold flex items-center justify-center text-sm">
-                    {internship.universitySupervisor.name.charAt(0)}
-                  </div>
-                  <div>
-                    <h4
-                      className={`text-sm font-bold ${
-                        dark ? "text-white" : "text-slate-800"
-                      }`}
-                    >
-                      {internship.universitySupervisor.name}
-                    </h4>
-                    <p className="text-[11px] text-slate-400">
-                      {internship.universitySupervisor.department || "Academic Liaison"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-800/60">
-                  <a
-                    href={`mailto:${internship.universitySupervisor.email}`}
-                    className="flex items-center gap-2 text-xs text-slate-300 hover:text-blue-400 transition-colors"
-                  >
-                    <Mail size={14} className="text-slate-500" />
-                    <span className="truncate">{internship.universitySupervisor.email}</span>
-                  </a>
-                </div>
+                {internship.universitySupervisor?.name ? (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 font-bold flex items-center justify-center text-sm">
+                        {internship.universitySupervisor.name.charAt(0)}
+                      </div>
+                      <div>
+                        <h4
+                          className={`text-sm font-bold ${
+                            dark ? "text-white" : "text-slate-800"
+                          }`}
+                        >
+                          {internship.universitySupervisor.name}
+                        </h4>
+                        <p className="text-[11px] text-slate-400">
+                          {internship.universitySupervisor.department || "Academic Liaison"}
+                        </p>
+                      </div>
+                    </div>
+                    {internship.universitySupervisor.email ? (
+                      <div className="pt-2 border-t border-slate-800/60">
+                        <a
+                          href={`mailto:${internship.universitySupervisor.email}`}
+                          className="flex items-center gap-2 text-xs text-slate-300 hover:text-blue-400 transition-colors"
+                          aria-label={`Email coordinator at ${internship.universitySupervisor.email}`}
+                        >
+                          <Mail size={14} className="text-slate-500" />
+                          <span className="truncate">{internship.universitySupervisor.email}</span>
+                        </a>
+                      </div>
+                    ) : (
+                      <p className={`text-xs pt-2 border-t border-slate-800/60 ${
+                        dark ? "text-slate-500" : "text-slate-400"
+                      }`}>
+                        Coordinator contact information unavailable.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className={`text-xs ${
+                    dark ? "text-slate-500" : "text-slate-400"
+                  }`}>
+                    University coordinator information is not yet available for this placement.
+                    Contact your faculty office for assistance.
+                  </p>
+                )}
               </div>
             </div>
           </div>
