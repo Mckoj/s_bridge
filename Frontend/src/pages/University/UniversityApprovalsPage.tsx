@@ -1,186 +1,291 @@
-import { useEffect, useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useDashboard } from "../../context/DashboardContext";
 import {
   Building,
   CheckCircle2,
   Clock,
-  Sparkles,
-  ShieldCheck
+  ShieldCheck,
 } from "lucide-react";
+import { useRecruiterApprovals } from "../../hooks/useRecruiterApprovals";
+import type { UniversityRecruiter } from "../../services/universityService";
 import {
-  getAllRecruitersForUniversity,
-  approveRecruiter
-} from "../../services/universityService";
+  LoadingSkeleton,
+  EmptyState,
+  ErrorState,
+} from "../../components/university";
+import PageHeader from "../../components/university/PageHeader";
 
-function useTheme() {
-  return useDashboard().theme === "dark";
+// ─────────────────────────────────────────────────────────────────────────────
+// Pending Recruiter Card
+// ─────────────────────────────────────────────────────────────────────────────
+
+function PendingRecruiterCard({
+  rec,
+  approving,
+  onApprove,
+}: {
+  rec: UniversityRecruiter;
+  approving: boolean;
+  onApprove: (id: string) => void;
+}) {
+  const { theme } = useDashboard();
+  const dark = theme === "dark";
+
+  return (
+    <div
+      className={`p-6 rounded-3xl border shadow-xl flex items-center justify-between gap-4 ${
+        dark
+          ? "bg-slate-900/80 border-slate-800/80 text-white"
+          : "bg-white border-slate-200/80 text-slate-900"
+      }`}
+      role="listitem"
+    >
+      <div className="flex items-center gap-4">
+        <div
+          className="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-400 flex items-center justify-center"
+          aria-hidden="true"
+        >
+          <Building size={24} />
+        </div>
+        <div>
+          <h3 className="font-bold text-base">{rec.companyName}</h3>
+          <p className="text-xs text-slate-400">{rec.email ?? "—"}</p>
+          <p className="text-[11px] text-amber-400 font-semibold mt-1">
+            Status: Pending Verification
+          </p>
+        </div>
+      </div>
+
+      <button
+        onClick={() => onApprove(rec.id)}
+        disabled={approving}
+        aria-label={`Approve ${rec.companyName}`}
+        aria-busy={approving}
+        className={`px-5 py-2.5 rounded-2xl text-xs font-bold bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/20 transition-all ${
+          approving ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+        }`}
+      >
+        {approving ? "Approving…" : "Approve"}
+      </button>
+    </div>
+  );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Verified Employers Table
+// ─────────────────────────────────────────────────────────────────────────────
+
+function VerifiedEmployersTable({
+  recruiters,
+}: {
+  recruiters: UniversityRecruiter[];
+}) {
+  const { theme } = useDashboard();
+  const dark = theme === "dark";
+
+  if (recruiters.length === 0) {
+    return (
+      <EmptyState
+        icon={<ShieldCheck size={28} />}
+        title="No Verified Employers Yet"
+        description="Approved employers will appear here after recruiter verifications are completed."
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`rounded-3xl border overflow-hidden shadow-xl ${
+        dark ? "bg-slate-900/80 border-slate-800/80" : "bg-white border-slate-200/80"
+      }`}
+    >
+      <div className="overflow-x-auto">
+        <table
+          className="w-full text-left border-collapse text-xs"
+          aria-label="Verified employer partners"
+        >
+          <thead>
+            <tr
+              className={`border-b text-[11px] font-bold uppercase tracking-wider ${
+                dark
+                  ? "border-slate-800 bg-slate-950/50 text-slate-400"
+                  : "border-slate-100 bg-slate-50 text-slate-500"
+              }`}
+            >
+              <th scope="col" className="py-3.5 px-6">Company Name</th>
+              <th scope="col" className="py-3.5 px-6">Email Contact</th>
+              <th scope="col" className="py-3.5 px-6">Website</th>
+              <th scope="col" className="py-3.5 px-6">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800/40 font-medium">
+            {recruiters.map((rec) => (
+              <tr
+                key={rec.id}
+                className={dark ? "hover:bg-slate-800/50" : "hover:bg-slate-50"}
+              >
+                <td className="py-4 px-6 font-bold">{rec.companyName}</td>
+                <td className="py-4 px-6 text-slate-400">{rec.email ?? "—"}</td>
+                <td className="py-4 px-6">
+                  {rec.companyWebsite ? (
+                    <a
+                      href={rec.companyWebsite}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-violet-400 hover:underline"
+                      aria-label={`Visit ${rec.companyName} website`}
+                    >
+                      {rec.companyWebsite}
+                    </a>
+                  ) : (
+                    <span className="text-slate-500">—</span>
+                  )}
+                </td>
+                <td className="py-4 px-6">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    <CheckCircle2 size={12} aria-hidden="true" />
+                    Verified
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Approve Error Banner
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ApproveErrorBanner({
+  error,
+  onDismiss,
+}: {
+  error: import("../../utils/apiErrors").ClassifiedApiError;
+  onDismiss: () => void;
+}) {
+  return (
+    <div
+      className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold flex items-center justify-between"
+      role="alert"
+      aria-live="assertive"
+    >
+      <span>{error.message}</span>
+      <button
+        onClick={onDismiss}
+        className="ml-4 underline cursor-pointer"
+        aria-label="Dismiss error"
+      >
+        Dismiss
+      </button>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Page
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function UniversityApprovalsPage() {
-  const dark = useTheme();
-  const [recruiters, setRecruiters] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [msg, setMsg] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchQueue();
-  }, []);
-
-  const fetchQueue = async () => {
-    setLoading(true);
-    try {
-      const data = await getAllRecruitersForUniversity();
-      setRecruiters(data);
-    } catch (err) {
-      console.error("Error fetching approval queue:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleApprove = async (id: string, name: string) => {
-    setMsg(null);
-    try {
-      await approveRecruiter(id);
-      setMsg(`Employer "${name}" has been approved!`);
-      fetchQueue();
-    } catch (err) {
-      alert("Failed to approve recruiter.");
-    }
-  };
-
-  const pendingRecruiters = recruiters.filter((r) => !r.isApproved);
-  const approvedRecruiters = recruiters.filter((r) => r.isApproved);
+  const {
+    pendingRecruiters,
+    approvedRecruiters,
+    loading,
+    error,
+    approving,
+    approveError,
+    handleApprove,
+    refetch,
+  } = useRecruiterApprovals();
 
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto space-y-6 pb-12">
-        {/* Header Banner */}
-        <div
-          className={`relative overflow-hidden rounded-[28px] border p-6 lg:p-8 shadow-xl ${
-            dark
-              ? "bg-slate-900/80 border-violet-500/20"
-              : "bg-gradient-to-br from-violet-50/90 via-white to-violet-50/50 border-violet-200/80"
-          }`}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div
-                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold ${
-                  dark
-                    ? "border-violet-500/30 bg-violet-500/10 text-violet-400"
-                    : "border-violet-200 bg-violet-100/80 text-violet-700"
-                }`}
-              >
-                <Sparkles size={14} />
-                Approval Center
-              </div>
-              <h1 className="mt-2 text-2xl lg:text-3xl font-extrabold tracking-tight">
-                Verification & Approval Center
-              </h1>
-              <p className={`mt-1 text-xs lg:text-sm font-medium ${dark ? "text-slate-400" : "text-slate-600"}`}>
-                Review registered employer recruiter accounts and verify company credentials for placement posting.
-              </p>
-            </div>
-          </div>
-        </div>
+        <PageHeader
+          badge="Approval Center"
+          title="Verification & Approval Center"
+          description="Review registered employer recruiter accounts and verify company credentials for placement posting."
+        />
 
-        {msg && (
-          <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2">
-            <CheckCircle2 size={16} /> {msg}
-          </div>
+        {/* Approve action error */}
+        {approveError && (
+          <ApproveErrorBanner
+            error={approveError}
+            onDismiss={refetch}
+          />
         )}
 
-        {/* Approval Queue Section */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <Clock className="text-amber-500" size={20} />
-            Pending Recruiter Verifications ({pendingRecruiters.length})
+        {/* Pending Queue */}
+        <section aria-labelledby="pending-heading">
+          <h2
+            id="pending-heading"
+            className="text-lg font-bold flex items-center gap-2 mb-4"
+          >
+            <Clock className="text-amber-500" size={20} aria-hidden="true" />
+            Pending Recruiter Verifications
+            <span
+              className="ml-1 text-sm font-bold text-amber-400"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              ({loading ? "—" : pendingRecruiters.length})
+            </span>
           </h2>
 
           {loading ? (
-            <div className="py-12 text-center text-xs text-slate-500 animate-pulse">Loading queue...</div>
+            <LoadingSkeleton count={3} layout="grid" />
+          ) : error ? (
+            <ErrorState error={error} onRetry={refetch} />
           ) : pendingRecruiters.length === 0 ? (
-            <div
-              className={`p-8 rounded-3xl border text-center text-xs text-slate-500 ${
-                dark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"
-              }`}
-            >
-              No pending employer verification requests.
-            </div>
+            <EmptyState
+              icon={<Clock size={28} />}
+              title="No Pending Verifications"
+              description="All registered employer accounts have been verified. New recruiter sign-ups will appear here."
+            />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              role="list"
+              aria-label="Recruiters awaiting verification"
+            >
               {pendingRecruiters.map((rec) => (
-                <div
+                <PendingRecruiterCard
                   key={rec.id}
-                  className={`p-6 rounded-3xl border shadow-xl flex items-center justify-between gap-4 ${
-                    dark ? "bg-slate-900/80 border-slate-800/80 text-white" : "bg-white border-slate-200/80 text-slate-900"
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-400 font-extrabold flex items-center justify-center">
-                      <Building size={24} />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-base">{rec.companyName}</h4>
-                      <p className="text-xs text-slate-400">{rec.user?.email}</p>
-                      <p className="text-[11px] text-amber-400 font-semibold mt-1">Status: Pending Verification</p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => handleApprove(rec.id, rec.companyName)}
-                    className="px-5 py-2.5 rounded-2xl text-xs font-bold bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/20"
-                  >
-                    Approve
-                  </button>
-                </div>
+                  rec={rec}
+                  approving={approving === rec.id}
+                  onApprove={handleApprove}
+                />
               ))}
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Verified Employers Section */}
-        <div className="space-y-4 pt-6">
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <ShieldCheck className="text-emerald-500" size={20} />
-            Verified Employer Partners ({approvedRecruiters.length})
+        {/* Verified Employers */}
+        <section aria-labelledby="verified-heading" className="pt-6">
+          <h2
+            id="verified-heading"
+            className="text-lg font-bold flex items-center gap-2 mb-4"
+          >
+            <ShieldCheck className="text-emerald-500" size={20} aria-hidden="true" />
+            Verified Employer Partners
+            <span
+              className="ml-1 text-sm font-bold text-emerald-400"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              ({loading ? "—" : approvedRecruiters.length})
+            </span>
           </h2>
 
-          <div
-            className={`rounded-3xl border overflow-hidden shadow-xl ${
-              dark ? "bg-slate-900/80 border-slate-800/80" : "bg-white border-slate-200/80"
-            }`}
-          >
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className={`border-b text-[11px] font-bold uppercase tracking-wider ${dark ? "border-slate-800 bg-slate-950/50 text-slate-400" : "border-slate-100 bg-slate-50 text-slate-500"}`}>
-                    <th className="py-3.5 px-6">Company Name</th>
-                    <th className="py-3.5 px-6">Email Contact</th>
-                    <th className="py-3.5 px-6">Website</th>
-                    <th className="py-3.5 px-6">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/40 font-medium">
-                  {approvedRecruiters.map((rec) => (
-                    <tr key={rec.id} className={dark ? "hover:bg-slate-800/50" : "hover:bg-slate-50"}>
-                      <td className="py-4 px-6 font-bold">{rec.companyName}</td>
-                      <td className="py-4 px-6 text-slate-400">{rec.user?.email}</td>
-                      <td className="py-4 px-6 text-violet-400">{rec.companyWebsite || "N/A"}</td>
-                      <td className="py-4 px-6">
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                          <CheckCircle2 size={12} /> Verified
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+          {loading ? (
+            <LoadingSkeleton count={3} layout="list" />
+          ) : error ? null : (
+            <VerifiedEmployersTable recruiters={approvedRecruiters} />
+          )}
+        </section>
       </div>
     </DashboardLayout>
   );
