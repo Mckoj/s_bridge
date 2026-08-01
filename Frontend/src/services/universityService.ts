@@ -15,6 +15,8 @@ export interface BackendUniversityStats {
   activePlacements: number;
   totalApplications: number;
   pendingRecruiters: number;
+  placementRate?: number;
+  totalStudents?: number;
 }
 
 /**
@@ -116,7 +118,7 @@ export function isBackendAnnouncementArray(
 
 /**
  * Normalized university statistics for the UI.
- * Fields unavailable from the backend are typed as undefined (never fabricated).
+ * Fields returned from the backend map to stats; missing fields remain undefined.
  */
 export interface UniversityStats {
   /** Mapped from activePlacements */
@@ -126,14 +128,13 @@ export interface UniversityStats {
   /** Mapped from pendingRecruiters */
   pendingRecruiters: number;
   /**
-   * NOT returned by backend yet — always undefined.
-   * Display "—" or "Not Available" in UI.
+   * Placement percentage returned by backend (e.g. "85.5%" or 85.5).
    */
-  placementRate: undefined;
+  placementRate?: number | string;
   /**
-   * NOT returned by backend yet — always undefined.
+   * Total students count returned by backend.
    */
-  totalStudents: undefined;
+  totalStudents?: number;
 }
 
 /** Normalized recruiter record for the UI */
@@ -187,9 +188,8 @@ export function mapUniversityStats(
     activePlacements: raw.activePlacements ?? 0,
     totalApplications: raw.totalApplications ?? 0,
     pendingRecruiters: raw.pendingRecruiters ?? 0,
-    // Fields not yet provided by backend — explicitly undefined, never fabricated
-    placementRate: undefined,
-    totalStudents: undefined,
+    placementRate: raw.placementRate !== undefined ? `${raw.placementRate}%` : undefined,
+    totalStudents: raw.totalStudents,
   };
 }
 

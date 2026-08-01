@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import api from "../services/api";
 import type { UserRole } from "./DashboardContext";
+import { queryCache } from "../utils/queryCache";
 
 export interface AuthUser {
   id: string;
@@ -96,6 +97,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    // Clear all cached API data so the next user starts fresh
+    queryCache.clear();
   };
 
   const clearError = () => setError(null);

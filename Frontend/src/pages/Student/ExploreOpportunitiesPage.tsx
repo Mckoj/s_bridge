@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useDashboard } from "../../context/DashboardContext";
 import api from "../../services/api";
+import { queryCache } from "../../utils/queryCache";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
@@ -76,19 +77,28 @@ export default function ExploreOpportunitiesPage() {
   const [applySuccess, setApplySuccess] = useState<string | null>(null);
   const [applyError, setApplyError] = useState<string | null>(null);
 
+  const INTERNSHIPS_CACHE_KEY = "GET:/api/internships";
+
   useEffect(() => {
     fetchInternships();
   }, []);
 
   const fetchInternships = async () => {
-    setLoading(true);
+    // Show stale data instantly — only block with spinner on true first load
+    const stale = queryCache.get<{ internships: InternshipItem[] }>(INTERNSHIPS_CACHE_KEY);
+    if (stale?.internships) {
+      setInternships(stale.internships);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     try {
       const res = await api.get("/api/internships");
       if (res.data?.internships && Array.isArray(res.data.internships)) {
         setInternships(res.data.internships);
       }
     } catch {
-      setInternships([]);
+      if (!stale) setInternships([]);
     } finally {
       setLoading(false);
     }
@@ -105,6 +115,9 @@ export default function ExploreOpportunitiesPage() {
         internshipId: applyTarget.id,
         coverLetter,
       });
+      // Invalidate stats cache so the dashboard reflects the new application
+      queryCache.invalidate("GET:/api/students/stats");
+      queryCache.invalidate("GET:/api/students/applications");
       setApplySuccess("Application submitted successfully!");
       setTimeout(() => {
         setApplyTarget(null);

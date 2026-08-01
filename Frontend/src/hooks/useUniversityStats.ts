@@ -3,6 +3,7 @@ import { getUniversityStats } from "../services/universityService";
 import type { UniversityStats } from "../services/universityService";
 import { DEFAULT_UNIVERSITY_STATS } from "../services/universityService";
 import type { ClassifiedApiError } from "../utils/apiErrors";
+import { queryCache } from "../utils/queryCache";
 
 interface UseUniversityStatsResult {
   stats: UniversityStats;
@@ -11,8 +12,13 @@ interface UseUniversityStatsResult {
   refetch: () => void;
 }
 
+const CACHE_KEY = "GET:/api/universities/stats";
+
 /**
  * Custom hook — fetches aggregated university statistics.
+ *
+ * Stale-while-revalidate: returns cached data instantly (no spinner) while
+ * silently refreshing in background. Only shows a spinner on the very first load.
  *
  * Backend returns: { activePlacements, totalApplications, pendingRecruiters }
  * Fields NOT returned (placementRate, totalStudents) are typed as undefined.
@@ -22,12 +28,13 @@ interface UseUniversityStatsResult {
  *   const { stats, loading, error, refetch } = useUniversityStats();
  */
 export function useUniversityStats(): UseUniversityStatsResult {
-  const [stats, setStats] = useState<UniversityStats>(DEFAULT_UNIVERSITY_STATS);
-  const [loading, setLoading] = useState(true);
+  const stale = queryCache.get<UniversityStats>(CACHE_KEY);
+  const [stats, setStats] = useState<UniversityStats>(stale ?? DEFAULT_UNIVERSITY_STATS);
+  const [loading, setLoading] = useState(!stale);
   const [error, setError] = useState<ClassifiedApiError | null>(null);
 
   const fetch = useCallback(async () => {
-    setLoading(true);
+    if (!queryCache.has(CACHE_KEY)) setLoading(true);
     setError(null);
     try {
       const data = await getUniversityStats();

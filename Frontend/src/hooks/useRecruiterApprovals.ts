@@ -5,6 +5,7 @@ import {
 } from "../services/universityService";
 import type { UniversityRecruiter } from "../services/universityService";
 import type { ClassifiedApiError } from "../utils/apiErrors";
+import { queryCache } from "../utils/queryCache";
 
 interface UseRecruiterApprovalsResult {
   recruiters: UniversityRecruiter[];
@@ -18,8 +19,17 @@ interface UseRecruiterApprovalsResult {
   refetch: () => void;
 }
 
+const CACHE_KEY = "GET:/api/recruiters";
+
 /**
  * Custom hook — manages the recruiter approval queue.
+ *
+ * Stale-while-revalidate: returns cached recruiter list instantly (no spinner)
+ * while silently refreshing in background. Only shows a spinner on the very
+ * first load when no cache entry exists.
+ *
+ * After approving a recruiter the cache is invalidated so the next navigation
+ * to this page reflects the updated state.
  *
  * Provides pre-filtered pendingRecruiters and approvedRecruiters lists so
  * page components are purely presentational.
@@ -29,14 +39,15 @@ interface UseRecruiterApprovalsResult {
  *           handleApprove, approving, approveError, refetch } = useRecruiterApprovals();
  */
 export function useRecruiterApprovals(): UseRecruiterApprovalsResult {
-  const [recruiters, setRecruiters] = useState<UniversityRecruiter[]>([]);
-  const [loading, setLoading] = useState(true);
+  const stale = queryCache.get<UniversityRecruiter[]>(CACHE_KEY);
+  const [recruiters, setRecruiters] = useState<UniversityRecruiter[]>(stale ?? []);
+  const [loading, setLoading] = useState(!stale);
   const [error, setError] = useState<ClassifiedApiError | null>(null);
   const [approving, setApproving] = useState<string | null>(null);
   const [approveError, setApproveError] = useState<ClassifiedApiError | null>(null);
 
   const fetch = useCallback(async () => {
-    setLoading(true);
+    if (!queryCache.has(CACHE_KEY)) setLoading(true);
     setError(null);
     try {
       const data = await getAllRecruitersForUniversity();
@@ -62,6 +73,8 @@ export function useRecruiterApprovals(): UseRecruiterApprovalsResult {
         setRecruiters((prev) =>
           prev.map((r) => (r.id === id ? { ...r, isApproved: true } : r))
         );
+        // Invalidate so the next page visit fetches fresh data
+        queryCache.invalidate(CACHE_KEY);
       } catch (err: unknown) {
         setApproveError(err as ClassifiedApiError);
       } finally {
