@@ -62,6 +62,8 @@ model Student {
   id            String         @id @default(uuid())
   userId        String         @unique
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  universityId  String?
+  university    University?    @relation(fields: [universityId], references: [id], onDelete: SetNull)
   firstName     String
   lastName      String
   studentId     String?        @unique
@@ -77,8 +79,10 @@ model Student {
   skills        StudentSkill[]
   applications  Application[]
   reports       Report[]
+  savedJobs     SavedJob[]
 
   @@index([userId])
+  @@index([universityId])
 }
 
 model Recruiter {
@@ -98,14 +102,16 @@ model Recruiter {
 }
 
 model University {
-  id             String   @id @default(uuid())
-  userId         String   @unique
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String         @id @default(uuid())
+  userId         String         @unique
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   universityName String
-  domain         String   @unique
+  domain         String         @unique
   contactEmail   String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  students       Student[]
+  announcements  Announcement[]
 
   @@index([userId])
 }
@@ -141,6 +147,7 @@ model Internship {
   skills           InternshipSkill[]
   applications     Application[]
   reports          Report[]
+  savedJobs        SavedJob[]
 
   @@index([recruiterId])
   @@index([status])
@@ -189,10 +196,52 @@ model Application {
   matchScore   Float             @default(0.0)
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
+  interviews   Interview[]
 
   @@index([studentId])
   @@index([internshipId])
   @@index([status])
+}
+
+model SavedJob {
+  id           String     @id @default(uuid())
+  studentId    String
+  student      Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  internshipId String
+  internship   Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([studentId, internshipId])
+  @@index([studentId])
+}
+
+model Interview {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  scheduledAt   DateTime
+  duration      String      @default("30 Mins")
+  platform      String      @default("Google Meet") // e.g. Google Meet, Microsoft Teams
+  meetingLink   String
+  interviewer   String
+  notes         String?     @db.Text
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([applicationId])
+}
+
+model Announcement {
+  id             String     @id @default(uuid())
+  universityId   String
+  university     University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  title          String
+  content        String     @db.Text
+  targetAudience String     @default("ALL") // e.g. ALL, FINAL_YEAR, COMPUTER_SCIENCE
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([universityId])
 }
 
 model Report {

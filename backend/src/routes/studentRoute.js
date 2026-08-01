@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const studentController = require('../controllers/studentController');
+const applicationController = require('../controllers/applicationController');
 const { authenticate, authorizeRoles } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
@@ -15,6 +16,15 @@ router.get('/internship', authenticate, authorizeRoles('STUDENT'), studentContro
 // Get authenticated student's stats
 router.get('/stats', authenticate, authorizeRoles('STUDENT'), studentController.getStudentStats);
 router.get('/me/stats', authenticate, authorizeRoles('STUDENT'), studentController.getStudentStats);
+
+// Get authenticated student's interviews
+router.get('/interviews', authenticate, authorizeRoles('STUDENT'), applicationController.getInterviews || studentController.getStudentInterviews);
+
+// Saved Jobs endpoints
+router.get('/saved-jobs', authenticate, authorizeRoles('STUDENT'), studentController.getSavedJobs);
+router.post('/saved-jobs', authenticate, authorizeRoles('STUDENT'), studentController.saveJob);
+router.post('/saved-jobs/:internshipId', authenticate, authorizeRoles('STUDENT'), studentController.saveJob);
+router.delete('/saved-jobs/:id', authenticate, authorizeRoles('STUDENT'), studentController.removeSavedJob);
 
 // Upload CV (PDF)
 router.post('/upload-cv', authenticate, authorizeRoles('STUDENT'), upload.single('file'), studentController.uploadCV);

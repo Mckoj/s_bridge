@@ -133,7 +133,7 @@ export const getStudentApplications = async () => {
 
 export const getActiveInternship = async () => {
   const res = await api.get("/api/students/internship");
-  return res.data.internship;
+  return res.data?.internship || res.data;
 };
 
 export const uploadCV = async (file: File) => {

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { getAllStudentsForUniversity } from "../services/universityService";
 import type { UniversityStudent } from "../services/universityService";
 import type { ClassifiedApiError } from "../utils/apiErrors";
+import { queryCache } from "../utils/queryCache";
 
 interface UseUniversityStudentsResult {
   students: UniversityStudent[];
@@ -10,8 +11,14 @@ interface UseUniversityStudentsResult {
   refetch: () => void;
 }
 
+const CACHE_KEY = "GET:/api/students";
+
 /**
  * Custom hook — fetches the university student roster.
+ *
+ * Stale-while-revalidate: returns cached student list instantly (no spinner)
+ * while silently refreshing in background. Only shows a spinner on the very
+ * first load when no cache entry exists.
  *
  * Students are fetched from GET /api/students and mapped through the
  * universityService mapper. All field transformations happen in the service
@@ -21,12 +28,13 @@ interface UseUniversityStudentsResult {
  *   const { students, loading, error, refetch } = useUniversityStudents();
  */
 export function useUniversityStudents(): UseUniversityStudentsResult {
-  const [students, setStudents] = useState<UniversityStudent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const stale = queryCache.get<UniversityStudent[]>(CACHE_KEY);
+  const [students, setStudents] = useState<UniversityStudent[]>(stale ?? []);
+  const [loading, setLoading] = useState(!stale);
   const [error, setError] = useState<ClassifiedApiError | null>(null);
 
   const fetch = useCallback(async () => {
-    setLoading(true);
+    if (!queryCache.has(CACHE_KEY)) setLoading(true);
     setError(null);
     try {
       const data = await getAllStudentsForUniversity();

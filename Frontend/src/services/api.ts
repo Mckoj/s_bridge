@@ -1,4 +1,5 @@
 import axios from "axios";
+import { queryCache } from "../utils/queryCache";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000",
@@ -7,7 +8,12 @@ const api = axios.create({
   },
 });
 
-// Attach JWT token to every request automatically
+// ─── Request interceptor — attach auth token ─────────────────────────────────
+// NOTE: Caching is NOT done at the Axios level because different service
+// functions transform/map the raw response.data before returning it to hooks.
+// Caching raw response.data would cause a shape mismatch when hooks try to
+// read the cache expecting the already-mapped type.
+// Each service function handles its own cache read/write after transformation.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -16,7 +22,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 globally — redirect to login
+// ─── Response interceptor — global 401 handler ───────────────────────────────
 api.interceptors.response.use(
   (response) => response,
   (error) => {

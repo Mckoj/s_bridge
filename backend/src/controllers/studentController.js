@@ -53,6 +53,27 @@ async function getStudentById(req, res) {
       return res.status(404).json({ error: 'Student not found' });
     }
 
+    // Role-based access validation (IDOR Prevention)
+    const { role } = req.user;
+    const isSelf = req.user.student?.id === student.id || req.user.id === student.userId;
+    const isAdmin = role === 'ADMIN';
+    const isUniversity = role === 'UNIVERSITY';
+
+    let isAuthorizedRecruiter = false;
+    if (role === 'RECRUITER' && req.user.recruiter?.id) {
+      const activeApp = await prisma.application.findFirst({
+        where: {
+          studentId: student.id,
+          internship: { recruiterId: req.user.recruiter.id }
+        }
+      });
+      if (activeApp) isAuthorizedRecruiter = true;
+    }
+
+    if (!isSelf && !isAdmin && !isUniversity && !isAuthorizedRecruiter) {
+      return res.status(403).json({ error: 'Unauthorized to view this student profile' });
+    }
+
     res.json({ success: true, student });
   } catch (error) {
     console.error('Error fetching student:', error);
@@ -195,6 +216,13 @@ async function getActiveInternship(req, res) {
     const recruiter = internship.recruiter;
     const profile = recruiter.companyProfile;
 
+    let universityInfo = null;
+    if (student.universityId) {
+      universityInfo = await prisma.university.findUnique({
+        where: { id: student.universityId }
+      });
+    }
+
     const responseData = {
       id: internship.id,
       title: internship.title,
@@ -210,13 +238,13 @@ async function getActiveInternship(req, res) {
         position: recruiter.position || 'Supervisor'
       },
       universitySupervisor: {
-        name: 'University Placement Coordinator',
-        email: 'coordinator@university.edu'
+        name: universityInfo ? `${universityInfo.universityName} Placement Office` : 'University Placement Coordinator',
+        email: universityInfo?.contactEmail || 'coordinator@university.edu'
       },
       status: 'ACTIVE'
     };
 
-    res.json(responseData);
+    res.json({ success: true, internship: responseData, ...responseData });
   } catch (error) {
     console.error('Error fetching active internship:', error);
     res.status(500).json({ error: 'Failed to fetch active internship' });
@@ -360,6 +388,124 @@ async function uploadAvatar(req, res) {
   }
 }
 
+async function saveJob(req, res) {
+  try {
+    const student = req.user.student;
+    if (!student) {
+      return res.status(403).json({ error: 'Only students can save jobs' });
+    }
+
+    const { internshipId } = req.body;
+    const targetInternshipId = internshipId || req.params.internshipId;
+
+    if (!targetInternshipId) {
+      return res.status(400).json({ error: 'Internship ID is required' });
+    }
+
+    const internship = await prisma.internship.findUnique({
+      where: { id: targetInternshipId }
+    });
+
+    if (!internship) {
+      return res.status(404).json({ error: 'Internship not found' });
+    }
+
+    const savedJob = await prisma.savedJob.upsert({
+      where: {
+        studentId_internshipId: {
+          studentId: student.id,
+          internshipId: targetInternshipId
+        }
+      },
+      update: {},
+      create: {
+        studentId: student.id,
+        internshipId: targetInternshipId
+      },
+      include: {
+        internship: {
+          include: {
+            recruiter: {
+              select: { companyName: true }
+            }
+          }
+        }
+      }
+    });
+
+    res.status(201).json({ success: true, savedJob });
+  } catch (error) {
+    console.error('Error saving job:', error);
+    res.status(500).json({ error: 'Failed to save job' });
+  }
+}
+
+async function getSavedJobs(req, res) {
+  try {
+    const student = req.user.student;
+    if (!student) {
+      return res.status(403).json({ error: 'Only students can view saved jobs' });
+    }
+
+    const savedJobs = await prisma.savedJob.findMany({
+      where: { studentId: student.id },
+      include: {
+        internship: {
+          include: {
+            recruiter: {
+              select: { companyName: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const formatted = savedJobs.map(sj => ({
+      id: sj.id,
+      internshipId: sj.internshipId,
+      title: sj.internship.title,
+      companyName: sj.internship.recruiter.companyName,
+      location: sj.internship.location,
+      internshipType: sj.internship.internshipType,
+      duration: sj.internship.duration,
+      salary: sj.internship.salary ? `$${sj.internship.salary}` : undefined,
+      savedAt: sj.createdAt.toISOString()
+    }));
+
+    res.json({ success: true, savedJobs: formatted });
+  } catch (error) {
+    console.error('Error fetching saved jobs:', error);
+    res.status(500).json({ error: 'Failed to fetch saved jobs' });
+  }
+}
+
+async function removeSavedJob(req, res) {
+  try {
+    const student = req.user.student;
+    if (!student) {
+      return res.status(403).json({ error: 'Only students can remove saved jobs' });
+    }
+
+    const { id } = req.params;
+
+    await prisma.savedJob.deleteMany({
+      where: {
+        studentId: student.id,
+        OR: [
+          { id },
+          { internshipId: id }
+        ]
+      }
+    });
+
+    res.json({ success: true, message: 'Job removed from saved jobs' });
+  } catch (error) {
+    console.error('Error removing saved job:', error);
+    res.status(500).json({ error: 'Failed to remove saved job' });
+  }
+}
+
 module.exports = {
   getAllStudents,
   getStudentById,
@@ -369,7 +515,11 @@ module.exports = {
   getStudentApplications,
   getStudentStats,
   uploadCV,
-  uploadAvatar
+  uploadAvatar,
+  saveJob,
+  getSavedJobs,
+  removeSavedJob
 };
+
 
 

@@ -9,4 +9,9 @@ router.get('/stats', authenticate, authorizeRoles('UNIVERSITY', 'ADMIN'), univer
 // Approve a recruiter
 router.patch('/recruiters/:id/approve', authenticate, authorizeRoles('UNIVERSITY', 'ADMIN'), universityController.approveRecruiter);
 
+// Announcement routes
+router.get('/announcements', authenticate, universityController.getUniversityAnnouncements);
+router.post('/announcements', authenticate, authorizeRoles('UNIVERSITY', 'ADMIN'), universityController.createAnnouncement);
+
 module.exports = router;
+

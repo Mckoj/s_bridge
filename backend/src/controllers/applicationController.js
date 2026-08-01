@@ -229,12 +229,120 @@ async function getApplicationById(req, res) {
       if (application.internship.recruiterId !== req.user.recruiter?.id) {
         return res.status(403).json({ error: 'Unauthorized to view applications for this internship' });
       }
+    } else if (role !== 'UNIVERSITY' && role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Unauthorized role' });
     }
 
     res.json({ success: true, application });
   } catch (error) {
     console.error('Error fetching application details:', error);
     res.status(500).json({ error: 'Failed to retrieve application details' });
+  }
+}
+
+async function scheduleInterview(req, res) {
+  try {
+    const { applicationId, scheduledAt, duration, platform, meetingLink, interviewer, notes } = req.body;
+    const targetAppId = req.params.id || applicationId;
+
+    if (!targetAppId || !scheduledAt || !meetingLink || !interviewer) {
+      return res.status(400).json({ error: 'applicationId, scheduledAt, meetingLink, and interviewer are required' });
+    }
+
+    const application = await prisma.application.findUnique({
+      where: { id: targetAppId },
+      include: { internship: true }
+    });
+
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    const { role } = req.user;
+    if (role === 'RECRUITER' && application.internship.recruiterId !== req.user.recruiter?.id) {
+      return res.status(403).json({ error: 'Unauthorized to schedule interviews for this internship' });
+    } else if (role !== 'RECRUITER' && role !== 'UNIVERSITY' && role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Unauthorized to schedule interviews' });
+    }
+
+    const interview = await prisma.interview.create({
+      data: {
+        applicationId: targetAppId,
+        scheduledAt: new Date(scheduledAt),
+        duration: duration || '30 Mins',
+        platform: platform || 'Google Meet',
+        meetingLink,
+        interviewer,
+        notes
+      }
+    });
+
+    res.status(201).json({ success: true, interview });
+  } catch (error) {
+    console.error('Error scheduling interview:', error);
+    res.status(500).json({ error: 'Failed to schedule interview' });
+  }
+}
+
+async function getInterviews(req, res) {
+  try {
+    const { role } = req.user;
+    let whereClause = {};
+
+    if (role === 'STUDENT') {
+      const studentId = req.user.student?.id;
+      if (!studentId) {
+        return res.status(400).json({ error: 'Student profile not found' });
+      }
+      whereClause = { application: { studentId } };
+    } else if (role === 'RECRUITER') {
+      const recruiterId = req.user.recruiter?.id;
+      if (!recruiterId) {
+        return res.status(400).json({ error: 'Recruiter profile not found' });
+      }
+      whereClause = { application: { internship: { recruiterId } } };
+    }
+
+    const interviews = await prisma.interview.findMany({
+      where: whereClause,
+      include: {
+        application: {
+          include: {
+            internship: {
+              include: {
+                recruiter: {
+                  select: { companyName: true }
+                }
+              }
+            }
+          }
+        }
+      },
+      orderBy: { scheduledAt: 'asc' }
+    });
+
+    const formatted = interviews.map(item => {
+      const scheduledDate = new Date(item.scheduledAt);
+      const isUpcoming = scheduledDate > new Date();
+      return {
+        id: item.id,
+        applicationId: item.applicationId,
+        companyName: item.application.internship.recruiter.companyName,
+        position: item.application.internship.title,
+        interviewDate: scheduledDate.toISOString().split('T')[0],
+        interviewTime: scheduledDate.toISOString().split('T')[1].substring(0, 5),
+        interviewer: item.interviewer,
+        platform: item.platform,
+        meetingLink: item.meetingLink,
+        notes: item.notes,
+        status: isUpcoming ? 'UPCOMING' : 'COMPLETED'
+      };
+    });
+
+    res.json({ success: true, interviews: formatted });
+  } catch (error) {
+    console.error('Error fetching interviews:', error);
+    res.status(500).json({ error: 'Failed to fetch interviews' });
   }
 }
 
@@ -304,5 +412,9 @@ module.exports = {
   applyToInternship,
   getApplications,
   getApplicationById,
-  updateApplicationStatus
+  updateApplicationStatus,
+  scheduleInterview,
+  getInterviews
 };
+
+
