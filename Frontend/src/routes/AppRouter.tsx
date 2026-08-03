@@ -45,6 +45,15 @@ import RoleBasedNotificationsPage from "../pages/Dashboard/RoleBasedNotification
 import RoleBasedSettingsPage from "../pages/Dashboard/RoleBasedSettingsPage";
 
 import CompanyDashboard from "../pages/Recruiter/CompanyDashboard";
+import RecruiterPostingsPage from "../pages/Recruiter/RecruiterPostingsPage";
+import RecruiterApplicationsPage from "../pages/Recruiter/RecruiterApplicationsPage";
+import RecruiterCandidatesPage from "../pages/Recruiter/RecruiterCandidatesPage";
+import RecruiterInterviewsPage from "../pages/Recruiter/RecruiterInterviewsPage";
+import RecruiterInternsPage from "../pages/Recruiter/RecruiterInternsPage";
+import RecruiterAnalyticsPage from "../pages/Recruiter/RecruiterAnalyticsPage";
+import RecruiterMessagesPage from "../pages/Recruiter/RecruiterMessagesPage";
+import RecruiterSettingsPage from "../pages/Recruiter/RecruiterSettingsPage";
+
 import PortalLanding from "../pages/Landing/PortalLanding";
 import RoleBasedDashboard from "../pages/Dashboard/RoleBasedDashboard";
 import DashboardSubPage from "../pages/Dashboard/DashboardSubPage";
@@ -89,6 +98,39 @@ const sharedRoleRoutes = (
     <Route path="/dashboard/messages"      element={<ProtectedRoute><RoleBasedMessagesPage /></ProtectedRoute>} />
     <Route path="/dashboard/notifications" element={<ProtectedRoute><RoleBasedNotificationsPage /></ProtectedRoute>} />
     <Route path="/dashboard/settings"      element={<ProtectedRoute><RoleBasedSettingsPage /></ProtectedRoute>} />
+  </>
+);
+
+const recruiterRoutes = (
+  <>
+    <Route path="/dashboard/postings"     element={<ProtectedRoute><RecruiterPostingsPage /></ProtectedRoute>} />
+    <Route path="/dashboard/applications" element={<ProtectedRoute><RecruiterApplicationsPage /></ProtectedRoute>} />
+    <Route path="/dashboard/candidates"   element={<ProtectedRoute><RecruiterCandidatesPage /></ProtectedRoute>} />
+    <Route path="/dashboard/interviews"   element={<ProtectedRoute><RecruiterInterviewsPage /></ProtectedRoute>} />
+    <Route path="/dashboard/interns"      element={<ProtectedRoute><RecruiterInternsPage /></ProtectedRoute>} />
+    <Route path="/dashboard/analytics font text" element={<Navigate to="/dashboard/analytics" replace />} />
+    <Route path="/dashboard/analytics"    element={<ProtectedRoute><RecruiterAnalyticsPage /></ProtectedRoute>} />
+
+    {/* Recruiter Role-Prefixed Aliases */}
+    <Route path="/recruiter/dashboard/postings"     element={<ProtectedRoute><RecruiterPostingsPage /></ProtectedRoute>} />
+    <Route path="/recruiter/dashboard/applications" element={<ProtectedRoute><RecruiterApplicationsPage /></ProtectedRoute>} />
+    <Route path="/recruiter/dashboard/candidates"   element={<ProtectedRoute><RecruiterCandidatesPage /></ProtectedRoute>} />
+    <Route path="/recruiter/dashboard/interviews"   element={<ProtectedRoute><RecruiterInterviewsPage /></ProtectedRoute>} />
+    <Route path="/recruiter/dashboard/interns"      element={<ProtectedRoute><RecruiterInternsPage /></ProtectedRoute>} />
+    <Route path="/recruiter/dashboard/analytics"    element={<ProtectedRoute><RecruiterAnalyticsPage /></ProtectedRoute>} />
+    <Route path="/recruiter/dashboard/messages"     element={<ProtectedRoute><RecruiterMessagesPage /></ProtectedRoute>} />
+    <Route path="/recruiter/dashboard/settings font text" element={<Navigate to="/recruiter/dashboard/settings" replace />} />
+    <Route path="/recruiter/dashboard/settings font" element={<Navigate to="/recruiter/dashboard/settings" replace />} />
+    <Route path="/recruiter/dashboard/settings"     element={<ProtectedRoute><RecruiterSettingsPage /></ProtectedRoute>} />
+
+    <Route path="/company/dashboard/postings"     element={<ProtectedRoute><RecruiterPostingsPage /></ProtectedRoute>} />
+    <Route path="/company/dashboard/applications" element={<ProtectedRoute><RecruiterApplicationsPage /></ProtectedRoute>} />
+    <Route path="/company/dashboard/candidates"   element={<ProtectedRoute><RecruiterCandidatesPage /></ProtectedRoute>} />
+    <Route path="/company/dashboard/interviews"   element={<ProtectedRoute><RecruiterInterviewsPage /></ProtectedRoute>} />
+    <Route path="/company/dashboard/interns"      element={<ProtectedRoute><RecruiterInternsPage /></ProtectedRoute>} />
+    <Route path="/company/dashboard/analytics"    element={<ProtectedRoute><RecruiterAnalyticsPage /></ProtectedRoute>} />
+    <Route path="/company/dashboard/messages"     element={<ProtectedRoute><RecruiterMessagesPage /></ProtectedRoute>} />
+    <Route path="/company/dashboard/settings"     element={<ProtectedRoute><RecruiterSettingsPage /></ProtectedRoute>} />
   </>
 );
 
@@ -197,6 +239,8 @@ export default function AppRouter() {
               <Route path="/"          element={<PortalLanding portal="recruiter" />} />
               {authRoutes}
               <Route path="/dashboard" element={<ProtectedRoute><CompanyDashboard /></ProtectedRoute>} />
+              {recruiterRoutes}
+              {sharedRoleRoutes}
               {subPageRoute}
               <Route path="*"          element={<Navigate to="/" replace />} />
             </>
@@ -213,6 +257,7 @@ export default function AppRouter() {
                 element={<ProtectedRoute><RoleBasedDashboard /></ProtectedRoute>}
               />
               {sharedRoleRoutes}
+              {recruiterRoutes}
               {universityRoutes}
               {studentRoutes}
 

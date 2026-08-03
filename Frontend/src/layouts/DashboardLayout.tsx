@@ -56,12 +56,13 @@ const roleNav = {
   ],
   recruiter: [
     { label: "Dashboard",           icon: LayoutDashboard, path: "/dashboard" },
-    { label: "Internship Postings", icon: PlusSquare,      path: "/dashboard/postings" },
-    { label: "Applications",        icon: FileText,        path: "/dashboard/applications" },
-    { label: "My Interns",          icon: Users,           path: "/dashboard/interns" },
-    { label: "Evaluations",         icon: ClipboardList,   path: "/dashboard/evaluations" },
+    { label: "Post Opportunities",  icon: PlusSquare,      path: "/dashboard/postings" },
+    { label: "Manage Applications", icon: FileText,        path: "/dashboard/applications" },
+    { label: "Candidates",          icon: Users,           path: "/dashboard/candidates" },
+    { label: "Interviews",          icon: CheckSquare,     path: "/dashboard/interviews" },
+    { label: "Placed Interns",      icon: ClipboardList,   path: "/dashboard/interns" },
+    { label: "Reports & Analytics", icon: BarChart2,       path: "/dashboard/analytics" },
     { label: "Messages",            icon: MessageSquare,   path: "/dashboard/messages" },
-    { label: "Analytics",           icon: BarChart2,       path: "/dashboard/analytics" },
     { label: "Settings",            icon: Settings,        path: "/dashboard/settings" },
   ],
 };
