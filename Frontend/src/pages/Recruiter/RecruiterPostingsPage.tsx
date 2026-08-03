@@ -119,7 +119,7 @@ export default function RecruiterPostingsPage() {
                       {item.location}
                     </p>
                     <p className={`flex items-center gap-1.5 ${dark ? "text-slate-400" : "text-slate-600"}`}>
-                      <Calendar size={14} className="text-blue-500" />
+                      <Calendar size={14} className="text-emerald-500" />
                       Duration: {item.duration}
                     </p>
                     {typeof item.salary === "number" && (

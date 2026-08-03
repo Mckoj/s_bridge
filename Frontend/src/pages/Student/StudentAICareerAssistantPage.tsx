@@ -23,20 +23,20 @@ export default function StudentAICareerAssistantPage() {
         {/* Full-Page Glassmorphic Coming Soon Overlay */}
         <div className={`absolute inset-0 z-30 flex items-center justify-center p-4 lg:p-8 backdrop-blur-xl rounded-[32px] border shadow-2xl my-2 ${
           dark
-            ? "bg-slate-950/65 border-purple-500/30"
-            : "bg-white/70 border-purple-300/60"
+            ? "bg-slate-950/65 border-blue-500/30"
+            : "bg-white/70 border-blue-300/60"
         }`}>
           <div className={`max-w-lg text-center space-y-6 p-8 lg:p-10 rounded-[28px] border shadow-2xl backdrop-blur-2xl ${
             dark
-              ? "bg-slate-900/95 border-purple-500/40"
-              : "bg-white/95 border-purple-300/60 shadow-purple-100"
+              ? "bg-slate-900/95 border-blue-500/40"
+              : "bg-white/95 border-blue-300/60 shadow-blue-100"
           }`}>
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-purple-500/30 to-violet-600/20 text-purple-400 border border-purple-500/40 mx-auto flex items-center justify-center shadow-xl shadow-purple-500/20 animate-pulse">
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500/30 to-blue-600/20 text-blue-400 border border-blue-500/40 mx-auto flex items-center justify-center shadow-xl shadow-blue-500/20 animate-pulse">
               <Sparkles size={36} />
             </div>
 
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-purple-500/20 text-purple-500 border border-purple-500/40 tracking-wider">
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-blue-500/20 text-blue-500 border border-blue-500/40 tracking-wider">
                 <Lock size={12} /> AI FEATURE • COMING SOON
               </span>
               <h2 className={`text-2xl lg:text-3xl font-extrabold tracking-tight ${
@@ -54,7 +54,7 @@ export default function StudentAICareerAssistantPage() {
             <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
               <button
                 onClick={() => navigate("/dashboard")}
-                className="px-6 py-3 rounded-2xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-xl shadow-purple-500/25 transition-all cursor-pointer"
+                className="px-6 py-3 rounded-2xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/25 transition-all cursor-pointer"
               >
                 Return to Dashboard
               </button>
@@ -78,13 +78,13 @@ export default function StudentAICareerAssistantPage() {
           <div
             className={`relative overflow-hidden rounded-[28px] border p-6 lg:p-8 shadow-xl ${
               dark
-                ? "bg-slate-900/80 border-purple-500/20"
-                : "bg-gradient-to-br from-purple-50/90 via-white to-purple-50/50 border-purple-200/80"
+                ? "bg-slate-900/80 border-blue-500/20"
+                : "bg-gradient-to-br from-blue-50/90 via-white to-blue-50/50 border-blue-200/80"
             }`}
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold border-purple-500/30 bg-purple-500/10 text-purple-400">
+                <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold border-blue-500/30 bg-blue-500/10 text-blue-400">
                   <Sparkles size={14} />
                   S-Bridge AI Intelligence Engine
                 </div>
@@ -104,12 +104,12 @@ export default function StudentAICareerAssistantPage() {
               {
                 label: "Career Match Score",
                 desc: "Matches your skills, GPA, and programmes against active internship requirements to surface the most relevant opportunities.",
-                color: "text-purple-400"
+                color: "text-blue-400"
               },
               {
                 label: "Placement Probability",
                 desc: "Uses an ML model trained on historical placements to estimate your likelihood of securing a placement in your chosen field.",
-                color: "text-emerald-400"
+                color: "text-blue-400"
               },
               {
                 label: "Resume Strength Index",
@@ -135,7 +135,7 @@ export default function StudentAICareerAssistantPage() {
               dark ? "bg-slate-900/80 border-slate-800" : "bg-white border-slate-200"
             }`}>
               <h3 className="text-base font-bold flex items-center gap-2">
-                <Brain size={18} className="text-purple-400" /> Skill Gap & Demand Analysis
+                <Brain size={18} className="text-blue-400" /> Skill Gap & Demand Analysis
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
                 Compares your verified skills against the most in-demand skills across active internship listings.
@@ -147,7 +147,7 @@ export default function StudentAICareerAssistantPage() {
               dark ? "bg-slate-900/80 border-slate-800" : "bg-white border-slate-200"
             }`}>
               <h3 className="text-base font-bold flex items-center gap-2">
-                <BookOpen size={18} className="text-purple-400" /> Personalized Learning Roadmap
+                <BookOpen size={18} className="text-blue-400" /> Personalized Learning Roadmap
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
                 Generates a step-by-step learning path tailored to your skills, target role, and timeline.

@@ -38,7 +38,7 @@ export default function StudentNotificationsPage() {
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold bg-purple-500/10 border-purple-500/20 text-purple-400">
+              <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold bg-blue-500/10 border-blue-500/20 text-blue-400">
                 <Sparkles size={13} />
                 Activity Alerts
               </div>
@@ -62,7 +62,7 @@ export default function StudentNotificationsPage() {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={markAllNotificationsRead}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600/10 border border-purple-500/20 hover:bg-purple-600/20 text-purple-400 text-xs font-bold transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600/10 border border-blue-500/20 hover:bg-blue-600/20 text-blue-400 text-xs font-bold transition-all cursor-pointer"
                 >
                   <CheckCheck size={14} />
                   <span>Mark All Read</span>
@@ -86,7 +86,7 @@ export default function StudentNotificationsPage() {
                 onClick={() => setFilter(f)}
                 className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                   filter === f
-                    ? "bg-purple-600 text-white shadow-lg shadow-purple-500/20"
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
                     : dark
                     ? "bg-slate-800/60 text-slate-400 hover:text-white"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -107,7 +107,7 @@ export default function StudentNotificationsPage() {
                 : "bg-white border-slate-200 shadow-xs"
             }`}
           >
-            <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 mb-4">
               <Bell size={32} />
             </div>
             <h3
@@ -133,8 +133,8 @@ export default function StudentNotificationsPage() {
                 className={`p-4 rounded-[20px] border transition-all flex items-start gap-4 ${
                   !notif.read
                     ? dark
-                      ? "bg-purple-950/20 border-purple-500/30"
-                      : "bg-purple-50/50 border-purple-200"
+                      ? "bg-blue-950/20 border-blue-500/30"
+                      : "bg-blue-50/50 border-blue-200"
                     : dark
                     ? "bg-slate-900/60 border-slate-800/80"
                     : "bg-white border-slate-200 shadow-xs"
@@ -143,7 +143,7 @@ export default function StudentNotificationsPage() {
                 <div
                   className={`p-2.5 rounded-xl shrink-0 ${
                     !notif.read
-                      ? "bg-purple-500 text-white"
+                      ? "bg-blue-500 text-white"
                       : dark
                       ? "bg-slate-800 text-slate-400"
                       : "bg-slate-100 text-slate-600"
@@ -166,7 +166,7 @@ export default function StudentNotificationsPage() {
                 </div>
 
                 {!notif.read && (
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0 mt-2" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0 mt-2" />
                 )}
               </div>
             ))}

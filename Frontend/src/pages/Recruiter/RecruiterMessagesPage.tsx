@@ -12,11 +12,13 @@ export default function RecruiterMessagesPage() {
           description="Communicate directly with student applicants and university placement coordinators."
         />
 
-        <EmptyState
-          icon={<MessageSquare size={32} className="text-emerald-500" />}
-          title="Direct Messaging Coming Soon"
-          description="Real-time candidate messaging and university coordinator chat will become available in an upcoming backend release."
-        />
+        <div className={`rounded-3xl border p-6 shadow-xl ${"bg-white border-emerald-200/80"}`}>
+          <EmptyState
+            icon={<MessageSquare size={32} className="text-emerald-500" />}
+            title="Direct Messaging Coming Soon"
+            description="Real-time candidate messaging and university coordinator chat will become available in an upcoming backend release."
+          />
+        </div>
       </div>
     </DashboardLayout>
   );

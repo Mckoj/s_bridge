@@ -78,7 +78,7 @@ export default function StudentInternshipPage() {
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
+              <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold bg-blue-500/10 border-blue-500/20 text-blue-400">
                 <Sparkles size={13} />
                 Industrial Attachment
               </div>
@@ -101,7 +101,7 @@ export default function StudentInternshipPage() {
             {internship && (
               <Link
                 to="/dashboard/reports"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all shrink-0 cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-lg shadow-blue-500/20 transition-all shrink-0 cursor-pointer"
               >
                 <FileCheck2 size={15} />
                 <span>Submit Weekly Report</span>
@@ -113,7 +113,7 @@ export default function StudentInternshipPage() {
         {/* Content Body */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="w-8 h-8 border-3 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+            <div className="w-8 h-8 border-3 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
           </div>
         ) : !internship ? (
           <div
@@ -123,7 +123,7 @@ export default function StudentInternshipPage() {
                 : "bg-white border-slate-200 shadow-xs"
             }`}
           >
-            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 mb-4">
               <Briefcase size={32} />
             </div>
             <h3
@@ -144,7 +144,7 @@ export default function StudentInternshipPage() {
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Link
                 to="/dashboard/applications"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-lg shadow-blue-500/20 transition-all cursor-pointer"
               >
                 <span>View Applications</span>
                 <ChevronRight size={14} />
@@ -163,7 +163,7 @@ export default function StudentInternshipPage() {
             >
               <div className="flex items-start justify-between gap-4 pb-6 border-b border-slate-800/60">
                 <div>
-                  <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-widest mb-1">
+                  <div className="flex items-center gap-2 text-xs font-bold text-blue-400 uppercase tracking-widest mb-1">
                     <Building2 size={15} /> {internship.companyName}
                   </div>
                   <h2
@@ -178,7 +178,7 @@ export default function StudentInternshipPage() {
                   </p>
                 </div>
 
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
                   <ShieldCheck size={14} /> Active Placement
                 </span>
               </div>
@@ -196,7 +196,7 @@ export default function StudentInternshipPage() {
                     Duration Period
                   </span>
                   <span className="font-bold flex items-center gap-1.5">
-                    <Calendar size={14} className="text-emerald-400" />
+                    <Calendar size={14} className="text-blue-400" />
                     {internship.startDate} — {internship.endDate}
                   </span>
                 </div>
@@ -212,7 +212,7 @@ export default function StudentInternshipPage() {
                     Work Arrangement
                   </span>
                   <span className="font-bold flex items-center gap-1.5">
-                    <Briefcase size={14} className="text-emerald-400" />
+                    <Briefcase size={14} className="text-blue-400" />
                     {internship.internshipType}
                   </span>
                 </div>
@@ -237,7 +237,7 @@ export default function StudentInternshipPage() {
                   Host Supervisor
                 </h3>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-sm">
+                  <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 font-bold flex items-center justify-center text-sm">
                     {internship.companySupervisor.name.charAt(0)}
                   </div>
                   <div>
@@ -257,7 +257,7 @@ export default function StudentInternshipPage() {
                 <div className="space-y-2 text-xs pt-2 border-t border-slate-800/60">
                   <a
                     href={`mailto:${internship.companySupervisor.email}`}
-                    className="flex items-center gap-2 text-slate-300 hover:text-emerald-400 transition-colors"
+                    className="flex items-center gap-2 text-slate-300 hover:text-blue-400 transition-colors"
                   >
                     <Mail size={14} className="text-slate-500" />
                     <span className="truncate">{internship.companySupervisor.email}</span>
@@ -265,7 +265,7 @@ export default function StudentInternshipPage() {
                   {internship.companySupervisor.phone && (
                     <a
                       href={`tel:${internship.companySupervisor.phone}`}
-                      className="flex items-center gap-2 text-slate-300 hover:text-emerald-400 transition-colors"
+                      className="flex items-center gap-2 text-slate-300 hover:text-blue-400 transition-colors"
                     >
                       <Phone size={14} className="text-slate-500" />
                       <span>{internship.companySupervisor.phone}</span>

@@ -54,11 +54,21 @@ import RecruiterAnalyticsPage from "../pages/Recruiter/RecruiterAnalyticsPage";
 import RecruiterMessagesPage from "../pages/Recruiter/RecruiterMessagesPage";
 import RecruiterSettingsPage from "../pages/Recruiter/RecruiterSettingsPage";
 
+import AdminDashboard from "../pages/Admin/AdminDashboard";
+import AdminStudentsPage from "../pages/Admin/AdminStudentsPage";
+import AdminRecruitersPage from "../pages/Admin/AdminRecruitersPage";
+import AdminInternshipsPage from "../pages/Admin/AdminInternshipsPage";
+import AdminApplicationsPage from "../pages/Admin/AdminApplicationsPage";
+import AdminReportsPage from "../pages/Admin/AdminReportsPage";
+import AdminAuditLogsPage from "../pages/Admin/AdminAuditLogsPage";
+import AdminSettingsPage from "../pages/Admin/AdminSettingsPage";
+
 import PortalLanding from "../pages/Landing/PortalLanding";
 import RoleBasedDashboard from "../pages/Dashboard/RoleBasedDashboard";
 import DashboardSubPage from "../pages/Dashboard/DashboardSubPage";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import { DashboardProvider } from "../context/DashboardContext";
+import { useAuth } from "../context/AuthContext";
 
 export const getActivePortal = (): "student" | "university" | "recruiter" | "main" => {
   const hostname = window.location.hostname;
@@ -199,8 +209,33 @@ const subPageRoute = (
   />
 );
 
+const adminRoutes = (
+  <>
+    <Route path="/admin/dashboard"            element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+    <Route path="/admin/dashboard/students"   element={<ProtectedRoute><AdminStudentsPage /></ProtectedRoute>} />
+    <Route path="/admin/dashboard/recruiters" element={<ProtectedRoute><AdminRecruitersPage /></ProtectedRoute>} />
+    <Route path="/admin/dashboard/internships" element={<ProtectedRoute><AdminInternshipsPage /></ProtectedRoute>} />
+    <Route path="/admin/dashboard/applications" element={<ProtectedRoute><AdminApplicationsPage /></ProtectedRoute>} />
+    <Route path="/admin/dashboard/reports"     element={<ProtectedRoute><AdminReportsPage /></ProtectedRoute>} />
+    <Route path="/admin/dashboard/audit-logs text" element={<Navigate to="/admin/dashboard/audit-logs" replace />} />
+    <Route path="/admin/dashboard/audit-logs"  element={<ProtectedRoute><AdminAuditLogsPage /></ProtectedRoute>} />
+    <Route path="/admin/dashboard/settings font text" element={<Navigate to="/admin/dashboard/settings" replace />} />
+    <Route path="/admin/dashboard/settings"    element={<ProtectedRoute><AdminSettingsPage /></ProtectedRoute>} />
+  </>
+);
+
 export default function AppRouter() {
   const activePortal = getActivePortal();
+  const { user } = useAuth();
+  const currentRole = user?.role?.toLowerCase();
+  const roleSpecificRoutes =
+    currentRole === "recruiter"
+      ? recruiterRoutes
+      : currentRole === "student"
+      ? studentRoutes
+      : currentRole === "university"
+      ? universityRoutes
+      : null;
 
   return (
     <DashboardProvider>
@@ -257,9 +292,8 @@ export default function AppRouter() {
                 element={<ProtectedRoute><RoleBasedDashboard /></ProtectedRoute>}
               />
               {sharedRoleRoutes}
-              {recruiterRoutes}
-              {universityRoutes}
-              {studentRoutes}
+              {roleSpecificRoutes}
+              {adminRoutes}
 
               {/* Legacy role-prefixed paths kept as aliases */}
               <Route path="/student/dashboard"    element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />

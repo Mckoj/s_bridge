@@ -16,11 +16,11 @@ export default function HiringPipeline({ applications }: HiringPipelineProps) {
   const rejected = applications.filter((a) => a.status === "REJECTED").length;
 
   const stages = [
-    { label: "Submitted", count: total, color: "bg-blue-500", text: "text-blue-500", pct: total > 0 ? "100%" : "0%" },
+    { label: "Submitted", count: total, color: "bg-emerald-500", text: "text-emerald-500", pct: total > 0 ? "100%" : "0%" },
     { label: "Pending", count: pending, color: "bg-amber-500", text: "text-amber-500", pct: total > 0 ? `${Math.round((pending / total) * 100)}%` : "0%" },
-    { label: "Under Review", count: reviewing, color: "bg-purple-500", text: "text-purple-500", pct: total > 0 ? `${Math.round((reviewing / total) * 100)}%` : "0%" },
-    { label: "Accepted", count: accepted, color: "bg-emerald-500", text: "text-emerald-500", pct: total > 0 ? `${Math.round((accepted / total) * 100)}%` : "0%" },
-    { label: "Rejected", count: rejected, color: "bg-red-500", text: "text-red-500", pct: total > 0 ? `${Math.round((rejected / total) * 100)}%` : "0%" },
+    { label: "Under Review", count: reviewing, color: "bg-teal-500", text: "text-teal-500", pct: total > 0 ? `${Math.round((reviewing / total) * 100)}%` : "0%" },
+    { label: "Accepted", count: accepted, color: "bg-green-600", text: "text-green-600", pct: total > 0 ? `${Math.round((accepted / total) * 100)}%` : "0%" },
+    { label: "Rejected", count: rejected, color: "bg-rose-500", text: "text-rose-500", pct: total > 0 ? `${Math.round((rejected / total) * 100)}%` : "0%" },
   ];
 
   return (

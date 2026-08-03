@@ -412,7 +412,8 @@ export function mapBackendRecruiterApplication(dto: BackendRecruiterApplication)
 }
 
 export function mapBackendRecruiterInterview(dto: BackendRecruiterInterview): RecruiterInterview {
-  const scheduledDate = dto.scheduledAt ? new Date(dto.scheduledAt) : new Date();
+  const scheduledAtValue = dto.scheduledAt || (dto.interviewDate && dto.interviewTime ? `${dto.interviewDate}T${dto.interviewTime}` : undefined);
+  const scheduledDate = scheduledAtValue ? new Date(scheduledAtValue) : new Date();
   const dateStr = scheduledDate.toISOString().split("T")[0];
   const timeStr = scheduledDate.toTimeString().substring(0, 5);
 
@@ -423,7 +424,7 @@ export function mapBackendRecruiterInterview(dto: BackendRecruiterInterview): Re
     applicationId: dto.applicationId,
     companyName: dto.companyName || dto.application?.internship?.recruiter?.companyName || "Company",
     position: dto.position || dto.application?.internship?.title || "Internship",
-    scheduledAt: dto.scheduledAt || `${dateStr}T${timeStr}`,
+    scheduledAt: scheduledAtValue || `${dateStr}T${timeStr}`,
     duration: dto.duration || "30 Mins",
     platform: dto.platform || "Google Meet",
     meetingLink: dto.meetingLink,

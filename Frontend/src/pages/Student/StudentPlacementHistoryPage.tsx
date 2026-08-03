@@ -82,7 +82,7 @@ export default function StudentPlacementHistoryPage() {
                     <span>•</span>
                     <span>Supervisor: {item.supervisor}</span>
                   </div>
-                  <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30">
                     <Star size={13} /> Evaluation: {item.evaluationScore}
                   </div>
                 </div>

@@ -52,6 +52,9 @@ export default function UpcomingInterviews({ interviews }: UpcomingInterviewsPro
                   {item.position}
                 </p>
                 <p className={`text-[11px] truncate ${dark ? "text-slate-400" : "text-slate-500"}`}>
+                  {item.companyName} • {item.platform}
+                </p>
+                <p className={`text-[11px] truncate ${dark ? "text-slate-400" : "text-slate-500"}`}>
                   Interviewer: <span className="font-medium">{item.interviewer}</span>
                 </p>
               </div>

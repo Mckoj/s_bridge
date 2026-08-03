@@ -79,7 +79,7 @@ export default function CompanyDashboard() {
         />
 
         {/* Unapproved Recruiter Warning Banner */}
-        {user?.role === "RECRUITER" && user?.recruiter && !user.recruiter.isApproved && (
+        {user?.role === "RECRUITER" && (user as any)?.recruiter && !(user as any).recruiter.isApproved && (
           <div className={`rounded-2xl border p-4 flex items-start gap-3.5 transition-all ${
             dark ? "bg-amber-500/10 border-amber-500/30 text-amber-400" : "bg-amber-50 border-amber-200 text-amber-800"
           }`}>
@@ -108,7 +108,7 @@ export default function CompanyDashboard() {
           <ErrorState error={mainError} onRetry={handleRefresh} />
         )}
 
-        {/* Real Backend Statistics Row */}
+        {/* Real Backend Statistics Row (Emerald/Green Theme Only) */}
         {stats && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
@@ -124,8 +124,8 @@ export default function CompanyDashboard() {
               value={stats.totalApplications}
               subtitle="Submissions received"
               icon={Users}
-              iconBg={dark ? "bg-blue-500/10" : "bg-blue-50"}
-              iconColor="text-blue-500"
+              iconBg={dark ? "bg-teal-500/10" : "bg-teal-50"}
+              iconColor="text-teal-500"
             />
             <StatCard
               title="Pending Reviews"
@@ -140,8 +140,8 @@ export default function CompanyDashboard() {
               value={stats.acceptedCandidates}
               subtitle="Placed interns"
               icon={UserCheck}
-              iconBg={dark ? "bg-purple-500/10" : "bg-purple-50"}
-              iconColor="text-purple-500"
+              iconBg={dark ? "bg-green-500/10" : "bg-green-50"}
+              iconColor="text-green-500"
             />
           </div>
         )}

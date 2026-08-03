@@ -132,7 +132,7 @@ export default function StudentReportsPage() {
     switch (status) {
       case "APPROVED":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
             <CheckCircle2 size={13} /> Approved
           </span>
         );
@@ -207,7 +207,7 @@ export default function StudentReportsPage() {
 
         {/* Toast Notification */}
         {successMessage && (
-          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center justify-between animate-fade-in">
+          <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold flex items-center justify-between animate-fade-in">
             <span className="flex items-center gap-2">
               <CheckCircle2 size={16} /> {successMessage}
             </span>
@@ -299,7 +299,7 @@ export default function StudentReportsPage() {
                   <div
                     className={`mt-4 p-3 rounded-xl border flex items-start gap-3 text-xs ${
                       report.status === "APPROVED"
-                        ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-300"
+                        ? "bg-blue-500/5 border-blue-500/20 text-blue-300"
                         : "bg-rose-500/5 border-rose-500/20 text-rose-300"
                     }`}
                   >

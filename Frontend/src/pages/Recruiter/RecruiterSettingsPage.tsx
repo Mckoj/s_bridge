@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
-import { useAuth } from "../../context/AuthContext";
 import { useDashboard } from "../../context/DashboardContext";
 import {
   getCurrentRecruiterProfile,
@@ -12,11 +11,8 @@ import { PageHeader, LoadingSkeleton, ErrorState } from "../../components/recrui
 import { Building, Upload, Save, CheckCircle2 } from "lucide-react";
 
 export default function RecruiterSettingsPage() {
-  const { user } = useAuth();
   const { theme } = useDashboard();
   const dark = theme === "dark";
-
-  const recruiterId = user?.id;
 
   const [profile, setProfile] = useState<RecruiterProfile | null>(null);
   const [loading, setLoading] = useState(true);
