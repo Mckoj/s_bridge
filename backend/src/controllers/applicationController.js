@@ -259,9 +259,14 @@ async function scheduleInterview(req, res) {
     }
 
     const { role } = req.user;
-    if (role === 'RECRUITER' && application.internship.recruiterId !== req.user.recruiter?.id) {
-      return res.status(403).json({ error: 'Unauthorized to schedule interviews for this internship' });
-    } else if (role !== 'RECRUITER' && role !== 'UNIVERSITY' && role !== 'ADMIN') {
+    if (role === 'RECRUITER') {
+      if (application.internship.recruiterId !== req.user.recruiter?.id) {
+        return res.status(403).json({ error: 'Unauthorized to schedule interviews for this internship' });
+      }
+      if (!req.user.recruiter?.isApproved) {
+        return res.status(403).json({ error: 'Your recruiter account is pending approval. You cannot schedule interviews until approved.' });
+      }
+    } else if (role !== 'UNIVERSITY' && role !== 'ADMIN') {
       return res.status(403).json({ error: 'Unauthorized to schedule interviews' });
     }
 
@@ -327,8 +332,8 @@ async function getInterviews(req, res) {
       return {
         id: item.id,
         applicationId: item.applicationId,
-        companyName: item.application.internship.recruiter.companyName,
-        position: item.application.internship.title,
+        companyName: item.application?.internship?.recruiter?.companyName || 'Company',
+        position: item.application?.internship?.title || 'Internship',
         interviewDate: scheduledDate.toISOString().split('T')[0],
         interviewTime: scheduledDate.toISOString().split('T')[1].substring(0, 5),
         interviewer: item.interviewer,
@@ -379,6 +384,9 @@ async function updateApplicationStatus(req, res) {
     } else if (role === 'RECRUITER') {
       if (application.internship.recruiterId !== req.user.recruiter?.id) {
         return res.status(403).json({ error: 'Unauthorized to update applications for this internship' });
+      }
+      if (!req.user.recruiter?.isApproved) {
+        return res.status(403).json({ error: 'Your recruiter account is pending approval. You cannot update application statuses until approved.' });
       }
       if (status === 'WITHDRAWN') {
         return res.status(403).json({ error: 'Recruiters cannot withdraw applications' });

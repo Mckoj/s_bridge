@@ -3,7 +3,7 @@ import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../context/AuthContext";
 import { useDashboard } from "../../context/DashboardContext";
 import {
-  getRecruiterProfile,
+  getCurrentRecruiterProfile,
   updateRecruiterProfile,
   uploadCompanyLogo,
   type RecruiterProfile,
@@ -18,7 +18,7 @@ export default function RecruiterSettingsPage() {
 
   const recruiterId = user?.id;
 
-  const [, setProfile] = useState<RecruiterProfile | null>(null);
+  const [profile, setProfile] = useState<RecruiterProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<any>(null);
   const [saving, setSaving] = useState(false);
@@ -35,14 +35,10 @@ export default function RecruiterSettingsPage() {
   const [logoUrl, setLogoUrl] = useState("");
 
   useEffect(() => {
-    if (!recruiterId) {
-      setLoading(false);
-      return;
-    }
     async function load() {
       try {
         setLoading(true);
-        const data = await getRecruiterProfile(recruiterId!);
+        const data = await getCurrentRecruiterProfile();
         setProfile(data);
         setCompanyName(data.companyName || "");
         setCompanyWebsite(data.companyWebsite || "");
@@ -59,7 +55,7 @@ export default function RecruiterSettingsPage() {
       }
     }
     load();
-  }, [recruiterId]);
+  }, []);
 
   const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -78,12 +74,12 @@ export default function RecruiterSettingsPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recruiterId) return;
+    if (!profile?.id) return;
     setSaving(true);
     setSuccessMsg("");
     setError(null);
     try {
-      const updated = await updateRecruiterProfile(recruiterId, {
+      const updated = await updateRecruiterProfile(profile.id, {
         companyName,
         companyWebsite,
         position,

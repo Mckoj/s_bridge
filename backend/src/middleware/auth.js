@@ -59,7 +59,37 @@ function authorizeRoles(...roles) {
   };
 }
 
+/**
+ * Middleware that ensures the authenticated user is a RECRUITER whose
+ * account has been approved by the university.
+ * Use AFTER authenticate() on routes that mutate recruiter-owned resources
+ * (e.g. creating internships, updating application statuses, scheduling interviews).
+ */
+function requireApprovedRecruiter(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'User is not authenticated' });
+  }
+
+  if (req.user.role !== 'RECRUITER') {
+    // Non-recruiter roles (ADMIN, UNIVERSITY) are not subject to this gate
+    return next();
+  }
+
+  if (!req.user.recruiter) {
+    return res.status(403).json({ error: 'Recruiter profile not found' });
+  }
+
+  if (!req.user.recruiter.isApproved) {
+    return res.status(403).json({
+      error: 'Your recruiter account is pending approval by the university. Please wait for verification before performing this action.'
+    });
+  }
+
+  next();
+}
+
 module.exports = {
   authenticate,
-  authorizeRoles
+  authorizeRoles,
+  requireApprovedRecruiter
 };

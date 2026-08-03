@@ -43,6 +43,41 @@ async function getRecruiterById(req, res) {
   }
 }
 
+/**
+ * GET /api/recruiters/me
+ * Returns the authenticated recruiter's own profile + company details.
+ * Uses the recruiter relation already loaded by the auth middleware,
+ * so no raw ID is needed from the frontend.
+ */
+async function getCurrentRecruiterProfile(req, res) {
+  try {
+    const recruiter = req.user.recruiter;
+    if (!recruiter) {
+      return res.status(403).json({ error: 'Only registered recruiters can access this endpoint' });
+    }
+
+    const profile = await prisma.recruiter.findUnique({
+      where: { id: recruiter.id },
+      include: {
+        companyProfile: true,
+        user: {
+          select: { email: true }
+        },
+        internships: true
+      }
+    });
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Recruiter profile not found' });
+    }
+
+    res.json({ success: true, recruiter: profile });
+  } catch (error) {
+    console.error('Error fetching current recruiter profile:', error);
+    res.status(500).json({ error: 'Failed to fetch recruiter profile' });
+  }
+}
+
 async function updateRecruiter(req, res) {
   try {
     const { id } = req.params;
@@ -110,27 +145,27 @@ async function getRecruiterStats(req, res) {
 
     const recruiterId = recruiter.id;
 
-    const totalListings = await prisma.internship.count({
-      where: { recruiterId }
-    });
-
-    const totalApplications = await prisma.application.count({
-      where: { internship: { recruiterId } }
-    });
-
-    const pendingReviews = await prisma.application.count({
-      where: {
-        internship: { recruiterId },
-        status: { in: ['PENDING', 'REVIEWING'] }
-      }
-    });
-
-    const acceptedCandidates = await prisma.application.count({
-      where: {
-        internship: { recruiterId },
-        status: 'ACCEPTED'
-      }
-    });
+    // Run all count queries in parallel for better performance
+    const [totalListings, totalApplications, pendingReviews, acceptedCandidates] = await Promise.all([
+      prisma.internship.count({
+        where: { recruiterId }
+      }),
+      prisma.application.count({
+        where: { internship: { recruiterId } }
+      }),
+      prisma.application.count({
+        where: {
+          internship: { recruiterId },
+          status: { in: ['PENDING', 'REVIEWING'] }
+        }
+      }),
+      prisma.application.count({
+        where: {
+          internship: { recruiterId },
+          status: 'ACCEPTED'
+        }
+      })
+    ]);
 
     res.json({
       success: true,
@@ -176,6 +211,7 @@ async function uploadLogo(req, res) {
 module.exports = {
   getAllRecruiters,
   getRecruiterById,
+  getCurrentRecruiterProfile,
   updateRecruiter,
   getRecruiterStats,
   uploadLogo
