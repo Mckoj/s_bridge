@@ -492,6 +492,20 @@ export async function getRecruiterProfile(id: string): Promise<RecruiterProfile>
   }
 }
 
+/** Fetch the authenticated recruiter's own profile (no ID needed) */
+export async function getCurrentRecruiterProfile(): Promise<RecruiterProfile> {
+  try {
+    const res = await api.get("/api/recruiters/me");
+    const raw = res.data?.recruiter;
+    if (!isBackendRecruiterProfile(raw)) {
+      throw classifyApiError({ response: { status: 404, data: { error: "Recruiter profile invalid" } } });
+    }
+    return mapBackendRecruiterProfile(raw);
+  } catch (err: unknown) {
+    throw classifyApiError(err);
+  }
+}
+
 /** Update Recruiter & Company Profile */
 export async function updateRecruiterProfile(
   id: string,

@@ -26,6 +26,7 @@ import {
   Sparkles,
   ChevronRight,
   Clock,
+  ShieldAlert,
 } from "lucide-react";
 
 export default function CompanyDashboard() {
@@ -76,6 +77,26 @@ export default function CompanyDashboard() {
             },
           ]}
         />
+
+        {/* Unapproved Recruiter Warning Banner */}
+        {user?.role === "RECRUITER" && user?.recruiter && !user.recruiter.isApproved && (
+          <div className={`rounded-2xl border p-4 flex items-start gap-3.5 transition-all ${
+            dark ? "bg-amber-500/10 border-amber-500/30 text-amber-400" : "bg-amber-50 border-amber-200 text-amber-800"
+          }`}>
+            <ShieldAlert size={20} className="shrink-0 mt-0.5 text-amber-500" />
+            <div className="text-xs space-y-1">
+              <p className="font-extrabold text-sm flex items-center gap-2">
+                Account Pending Verification
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/30">
+                  PENDING APPROVAL
+                </span>
+              </p>
+              <p className={dark ? "text-amber-300/80" : "text-amber-700"}>
+                Your recruiter profile is currently awaiting verification by a University Administrator. While pending, creating job listings, updating candidate applications, and scheduling interviews are restricted.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Loading Skeleton */}
         {loading && !stats && (
