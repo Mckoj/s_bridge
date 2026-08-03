@@ -7,6 +7,11 @@ async function createInternship(req, res) {
       return res.status(403).json({ error: 'Only registered recruiters can post internships' });
     }
 
+    // Block unapproved recruiters from publishing listings
+    if (!recruiter.isApproved) {
+      return res.status(403).json({ error: 'Your recruiter account is pending approval. You cannot post internships until approved by the university.' });
+    }
+
     const { title, description, location, internshipType, salary, duration, targetProgrammes, skills } = req.body;
 
     if (!title || !description || !location || !internshipType || !duration) {
@@ -74,10 +79,16 @@ async function getAllInternships(req, res) {
 
     let whereClause = {};
 
+    // Recruiter users should only see their own postings
+    if (req.user.role === 'RECRUITER' && req.user.recruiter?.id) {
+      whereClause.recruiterId = req.user.recruiter.id;
+    }
+
     // Filter status (defaults to OPEN if not specified)
     if (status) {
       whereClause.status = status;
-    } else {
+    } else if (req.user.role !== 'RECRUITER') {
+      // Non-recruiter callers default to OPEN; recruiters see all their own statuses
       whereClause.status = 'OPEN';
     }
 
@@ -195,9 +206,14 @@ async function updateInternship(req, res) {
       return res.status(404).json({ error: 'Internship listing not found' });
     }
 
-    // Check ownership if user is a recruiter
-    if (req.user.role === 'RECRUITER' && req.user.recruiter?.id !== existing.recruiterId) {
-      return res.status(403).json({ error: 'Unauthorized to modify this internship listing' });
+    // Check ownership and approval if user is a recruiter
+    if (req.user.role === 'RECRUITER') {
+      if (req.user.recruiter?.id !== existing.recruiterId) {
+        return res.status(403).json({ error: 'Unauthorized to modify this internship listing' });
+      }
+      if (!req.user.recruiter?.isApproved) {
+        return res.status(403).json({ error: 'Your recruiter account is pending approval. You cannot modify internships until approved.' });
+      }
     }
 
     const updated = await prisma.$transaction(async (tx) => {
