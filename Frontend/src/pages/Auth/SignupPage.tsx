@@ -7,6 +7,7 @@ import {
   GraduationCap,
   Building2,
   Briefcase,
+  Shield,
   Mail,
   Lock,
   User,
@@ -79,12 +80,13 @@ export default function SignupPage() {
       <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block text-center">
         Select Account Type
       </label>
-      {(["student", "university", "recruiter"] as UserRole[]).map((role) => {
-        const icons = { student: GraduationCap, university: Building2, recruiter: Briefcase };
+      {(["student", "university", "recruiter", "admin"] as UserRole[]).map((role) => {
+        const icons = { student: GraduationCap, university: Building2, recruiter: Briefcase, admin: Shield };
         const descriptions = {
           student: "Find placements, build your CV, and submit logbooks.",
           university: "Administer placements, authorize reports, view analytics.",
           recruiter: "Create vacancies, schedule interviews, and evaluate interns.",
+          admin: "Manage the platform, review users, and oversee system operations.",
         };
         const Icon = icons[role];
         const isSelected = selectedRole === role;
