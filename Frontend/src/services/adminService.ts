@@ -132,12 +132,45 @@ export function isBackendAdminReportArray(data: unknown): data is BackendAdminRe
 // NORMALIZED FRONTEND MODELS
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// UNIVERSITY STATS DTO  (GET /api/universities/stats — accessible to ADMIN)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface BackendUniversityStatsForAdmin {
+  totalStudents: number;
+  totalRecruiters: number;
+  pendingRecruiters: number;
+  totalInternships: number;
+  totalApplications: number;
+  activePlacements: number;
+  studentsPlaced: number;
+  placementRate: number;
+  pending: number;
+  rejected: number;
+}
+
+export function isBackendUniversityStatsForAdmin(
+  data: unknown
+): data is BackendUniversityStatsForAdmin {
+  if (!data || typeof data !== "object") return false;
+  const d = data as Record<string, unknown>;
+  return (
+    typeof d.activePlacements === "number" &&
+    typeof d.totalApplications === "number" &&
+    typeof d.pendingRecruiters === "number"
+  );
+}
+
 export interface AdminStats {
   totalStudents: number;
   totalRecruiters: number;
   pendingApprovals: number;
   totalInternships: number;
   totalApplications: number;
+  /** Available when /api/universities/stats succeeds */
+  activePlacements?: number;
+  /** Percentage 0-100, available when /api/universities/stats succeeds */
+  placementRate?: number;
 }
 
 export interface AdminStudent {
@@ -282,6 +315,26 @@ const RECRUITERS_CACHE_KEY = "GET:/api/recruiters";
 const INTERNSHIPS_CACHE_KEY = "GET:/api/internships";
 const APPLICATIONS_CACHE_KEY = "GET:/api/applications";
 const REPORTS_CACHE_KEY = "GET:/api/reports";
+const UNIVERSITY_STATS_CACHE_KEY = "GET:/api/universities/stats:admin";
+
+/**
+ * Fetch aggregated statistics from the university stats endpoint.
+ * Accessible to ADMIN and UNIVERSITY roles.
+ * Returns richer data than deriving from sub-resources (includes placementRate).
+ */
+export async function getAdminUniversityStats(): Promise<BackendUniversityStatsForAdmin> {
+  try {
+    const res = await api.get("/api/universities/stats");
+    const raw = res.data?.stats;
+    if (!isBackendUniversityStatsForAdmin(raw)) {
+      throw classifyApiError({ response: { status: 500, data: { error: "Unexpected stats shape" } } });
+    }
+    queryCache.set(UNIVERSITY_STATS_CACHE_KEY, raw, TTL.SHORT);
+    return raw;
+  } catch (err: unknown) {
+    throw classifyApiError(err);
+  }
+}
 
 /** Fetch all Students for Admin */
 export async function getAdminStudents(): Promise<AdminStudent[]> {

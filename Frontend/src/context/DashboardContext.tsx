@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useAuth } from "./AuthContext";
 
-export type UserRole = "student" | "university" | "recruiter";
+export type UserRole = "student" | "university" | "recruiter" | "admin";
+export type DashboardRole = UserRole;
 
 export interface TaskItem {
   id: string;
@@ -54,8 +56,8 @@ export interface InternItem {
 interface DashboardContextType {
   theme: "light" | "dark";
   toggleTheme: () => void;
-  role: UserRole;
-  setRole: (role: UserRole) => void;
+  role: DashboardRole;
+  setRole: (role: DashboardRole) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 
@@ -95,6 +97,7 @@ const getActivePortalRole = (): UserRole => {
 };
 
 export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     const saved = localStorage.getItem("theme");
     return saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)
@@ -102,12 +105,17 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       : "light";
   });
 
-  const [role, setRoleState] = useState<UserRole>(() => getActivePortalRole());
+  const [storedRole, setStoredRole] = useState<DashboardRole>(() => getActivePortalRole());
+  const authenticatedRole = user?.role?.toLowerCase();
+  const role: DashboardRole =
+    authenticatedRole === "student" || authenticatedRole === "university" || authenticatedRole === "recruiter" || authenticatedRole === "admin"
+      ? authenticatedRole
+      : storedRole;
 
   const [searchQuery, setSearchQuery] = useState("");
 
-  const setRole = (newRole: UserRole) => {
-    setRoleState(newRole);
+  const setRole = (newRole: DashboardRole) => {
+    setStoredRole(newRole);
     localStorage.setItem("dashboard_role", newRole);
   };
 
