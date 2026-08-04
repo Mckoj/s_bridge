@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../context/AuthContext";
 import { useDashboard } from "../../context/DashboardContext";
@@ -9,8 +10,6 @@ import { useRecruiterInternships } from "../../hooks/useRecruiterInternships";
 import {
   StatCard,
   PageHeader,
-  HiringPipeline,
-  RecentApplications,
   UpcomingInterviews,
   PostOpportunityModal,
   ScheduleInterviewModal,
@@ -23,22 +22,31 @@ import {
   UserCheck,
   Plus,
   Calendar,
-  Sparkles,
   ChevronRight,
   Clock,
   ShieldAlert,
+  ArrowRight,
+  FileText,
 } from "lucide-react";
+
+type RecruiterAuthUser = {
+  recruiter?: {
+    isApproved?: boolean;
+  };
+};
 
 export default function CompanyDashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { theme } = useDashboard();
   const dark = theme === "dark";
+  const recruiterApproval = (user as (typeof user & RecruiterAuthUser) | null)?.recruiter?.isApproved;
 
   const rawName = user?.email?.split("@")[0] ?? "Recruiter";
   const name = rawName.charAt(0).toUpperCase() + rawName.slice(1);
 
   const { stats, loading: statsLoading, error: statsError, refetch: refetchStats } = useRecruiterStats();
-  const { applications, loading: appsLoading, error: appsError, updateStatus, updatingId, refetch: refetchApps } = useRecruiterApplications();
+  const { applications, loading: appsLoading, error: appsError, refetch: refetchApps } = useRecruiterApplications();
   const { interviews, loading: interviewsLoading, error: interviewsError, createInterview, refetch: refetchInterviews } = useRecruiterInterviews();
   const { createPosting, creating } = useRecruiterInternships();
 
@@ -47,6 +55,11 @@ export default function CompanyDashboard() {
 
   const loading = statsLoading || appsLoading || interviewsLoading;
   const mainError = statsError || appsError || interviewsError;
+  const pendingApplications = applications.filter((application) => application.status === "PENDING").length;
+  const reviewingApplications = applications.filter((application) => application.status === "REVIEWING").length;
+  const latestApplications = [...applications]
+    .sort((first, second) => new Date(second.appliedAt).getTime() - new Date(first.appliedAt).getTime())
+    .slice(0, 3);
 
   const handleRefresh = () => {
     refetchStats();
@@ -61,7 +74,7 @@ export default function CompanyDashboard() {
         <PageHeader
           badge="Company Portal"
           title={`Welcome back, ${name}! 👋`}
-          description="Monitor active postings, review candidate applications, and schedule interviews."
+          description="A focused operational overview of your hiring activity. Use the dedicated workspaces to manage listings and applications."
           actions={[
             {
               label: "Post Opportunity",
@@ -79,7 +92,7 @@ export default function CompanyDashboard() {
         />
 
         {/* Unapproved Recruiter Warning Banner */}
-        {user?.role === "RECRUITER" && (user as any)?.recruiter && !(user as any).recruiter.isApproved && (
+        {user?.role === "RECRUITER" && recruiterApproval === false && (
           <div className={`rounded-2xl border p-4 flex items-start gap-3.5 transition-all ${
             dark ? "bg-amber-500/10 border-amber-500/30 text-amber-400" : "bg-amber-50 border-amber-200 text-amber-800"
           }`}>
@@ -146,56 +159,51 @@ export default function CompanyDashboard() {
           </div>
         )}
 
-        {/* Hiring Pipeline Funnel */}
-        <HiringPipeline applications={applications} />
-
-        {/* Two Column Layout: Recent Applications & Upcoming Interviews */}
+        {/* Operational snapshot — read-only. Application management belongs in its own workspace. */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Applications (2 Cols) */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className={`text-base font-extrabold ${dark ? "text-white" : "text-slate-800"}`}>
-                  Recent Candidate Submissions
-                </h3>
-                <p className={`text-xs ${dark ? "text-slate-400" : "text-slate-500"}`}>
-                  Latest student applications across your listings
-                </p>
+            <section className={`rounded-3xl border p-6 shadow-xl ${dark ? "bg-slate-900/80 border-slate-800" : "bg-white border-slate-200"}`} aria-labelledby="recruiter-work-queue">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-500">Today’s focus</p>
+                  <h2 id="recruiter-work-queue" className={`mt-1 text-lg font-extrabold ${dark ? "text-white" : "text-slate-800"}`}>Recruiting work queue</h2>
+                  <p className={`mt-1 text-xs ${dark ? "text-slate-400" : "text-slate-500"}`}>A read-only summary of backend application data.</p>
+                </div>
+                <FileText size={20} className="text-emerald-500" aria-hidden="true" />
               </div>
-            </div>
 
-            <RecentApplications
-              applications={applications}
-              onStatusChange={updateStatus}
-              updatingId={updatingId}
-            />
+              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <QueueMetric label="Pending review" value={pendingApplications} dark={dark} />
+                <QueueMetric label="In review" value={reviewingApplications} dark={dark} />
+                <QueueMetric label="Upcoming calls" value={interviews.length} dark={dark} />
+              </div>
+
+              <div className={`mt-5 border-t pt-4 ${dark ? "border-slate-800" : "border-slate-100"}`}>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className={`text-sm font-bold ${dark ? "text-slate-200" : "text-slate-700"}`}>Latest submissions</h3>
+                  <button onClick={() => navigate("/dashboard/applications")} className="inline-flex items-center gap-1 text-xs font-bold text-emerald-500 hover:underline">Open applications <ArrowRight size={12} /></button>
+                </div>
+                {latestApplications.length === 0 ? (
+                  <p className={`rounded-xl px-3 py-4 text-center text-xs ${dark ? "bg-slate-800/60 text-slate-400" : "bg-slate-50 text-slate-500"}`}>No applications have been received yet.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {latestApplications.map((application) => (
+                      <li key={application.id} className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 ${dark ? "bg-slate-800/60" : "bg-slate-50"}`}>
+                        <div className="min-w-0"><p className={`truncate text-xs font-bold ${dark ? "text-white" : "text-slate-800"}`}>{application.studentName}</p><p className={`truncate text-[11px] ${dark ? "text-slate-400" : "text-slate-500"}`}>{application.jobTitle}</p></div>
+                        <span className="shrink-0 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-500">{application.status.replace("_", " ")}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <button onClick={() => navigate("/dashboard/applications")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-emerald-500/20 transition-colors hover:bg-emerald-700">Review applications <ArrowRight size={14} /></button>
+                <button onClick={() => navigate("/dashboard/postings")} className={`rounded-xl border px-4 py-2 text-xs font-bold transition-colors ${dark ? "border-slate-700 text-slate-200 hover:bg-slate-800" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}>Manage postings</button>
+              </div>
+            </section>
           </div>
 
-          {/* Upcoming Interviews & AI Banner (1 Col) */}
           <div className="space-y-6">
-            {/* Honest AI Insights Banner */}
-            <div
-              className={`rounded-3xl border p-5 relative overflow-hidden ${
-                dark
-                  ? "bg-slate-900/80 border-emerald-500/20"
-                  : "bg-gradient-to-br from-emerald-500/5 via-white to-emerald-500/10 border-emerald-200/80"
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles size={16} className="text-emerald-500" />
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-500">
-                  AI Recruitment Insights
-                </span>
-                <span className="ml-auto text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                  Coming Soon
-                </span>
-              </div>
-              <p className={`text-xs leading-relaxed ${dark ? "text-slate-400" : "text-slate-600"}`}>
-                Machine learning fit predictions, skill gap analysis, and candidate matching scores will become available when the AI recommendation engine is deployed.
-              </p>
-            </div>
-
-            {/* Upcoming Interviews Widget */}
             <div
               className={`rounded-3xl border p-5 space-y-4 shadow-xl ${
                 dark ? "bg-slate-900/80 border-slate-800" : "bg-white border-slate-200"
@@ -245,5 +253,14 @@ export default function CompanyDashboard() {
         }}
       />
     </DashboardLayout>
+  );
+}
+
+function QueueMetric({ label, value, dark }: { label: string; value: number; dark: boolean }) {
+  return (
+    <div className={`rounded-2xl border p-3 ${dark ? "border-slate-700 bg-slate-800/60" : "border-slate-200 bg-slate-50"}`}>
+      <p className="text-xl font-extrabold tabular-nums text-emerald-500">{value}</p>
+      <p className={`mt-0.5 text-[11px] font-semibold ${dark ? "text-slate-400" : "text-slate-600"}`}>{label}</p>
+    </div>
   );
 }
