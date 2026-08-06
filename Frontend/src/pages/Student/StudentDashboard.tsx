@@ -295,16 +295,16 @@ export default function StudentDashboard() {
             value={stats.accepted}
             subtitle="Congratulations!"
             icon={CheckCircle2}
-            iconBg="bg-emerald-500/10"
-            iconColor="text-emerald-500"
+            iconBg="bg-blue-500/10"
+            iconColor="text-blue-500"
           />
           <StatCard
             title="Reports Submitted"
             value={stats.submittedReports}
             subtitle="Logbook Entries"
             icon={FileCheck2}
-            iconBg="bg-purple-500/10"
-            iconColor="text-purple-500"
+            iconBg="bg-blue-500/10"
+            iconColor="text-blue-500"
           />
         </div>
 
@@ -319,7 +319,7 @@ export default function StudentDashboard() {
                   <h3 className="text-base font-bold flex items-center gap-2">
                     <Sparkles size={18} className="text-blue-500" />
                     AI Recommended Opportunities
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-blue-500/20 text-blue-400 border border-blue-500/30">
                       AI Feature • Coming Soon
                     </span>
                   </h3>
@@ -427,7 +427,7 @@ export default function StudentDashboard() {
                       <span
                         className={`px-3 py-1 rounded-full text-[10px] font-bold ${
                           app.status === "ACCEPTED"
-                            ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                            ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
                             : app.status === "REJECTED"
                             ? "bg-red-500/15 text-red-400 border border-red-500/30"
                             : app.status === "WITHDRAWN"
@@ -453,7 +453,7 @@ export default function StudentDashboard() {
                   <Bot size={18} className="text-blue-500" />
                   AI Match Score Breakdown
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-blue-500/20 text-blue-400 border border-blue-500/30">
                   Coming Soon
                 </span>
               </div>
@@ -464,8 +464,8 @@ export default function StudentDashboard() {
               <div className="space-y-3">
                 {[
                   { label: "Technical Skills Alignment", pct: 85, color: "bg-blue-500" },
-                  { label: "Academic Performance (GPA)", pct: 75, color: "bg-emerald-500" },
-                  { label: "Project Portfolio Relevance", pct: 60, color: "bg-purple-500" },
+                  { label: "Academic Performance (GPA)", pct: 75, color: "bg-blue-500" },
+                  { label: "Project Portfolio Relevance", pct: 60, color: "bg-blue-500" },
                   { label: "Experience & Coursework", pct: 50, color: "bg-amber-500" },
                 ].map((item) => (
                   <div key={item.label}>
@@ -514,7 +514,7 @@ export default function StudentDashboard() {
             </p>
 
             {applySuccess ? (
-              <div className="my-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs text-center font-bold">
+              <div className="my-6 p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs text-center font-bold">
                 {applySuccess}
               </div>
             ) : (

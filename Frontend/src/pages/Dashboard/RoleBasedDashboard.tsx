@@ -2,6 +2,7 @@ import { useDashboard } from "../../context/DashboardContext";
 import StudentDashboard from "../Student/StudentDashboard";
 import UniversityDashboard from "../University/UniversityDashboard";
 import CompanyDashboard from "../Recruiter/CompanyDashboard";
+import { Navigate } from "react-router-dom";
 
 /**
  * Renders the correct dashboard based on the user's role stored in DashboardContext.
@@ -10,6 +11,7 @@ import CompanyDashboard from "../Recruiter/CompanyDashboard";
 export default function RoleBasedDashboard() {
   const { role } = useDashboard();
 
+  if (role === "admin") return <Navigate to="/admin/dashboard" replace />;
   if (role === "university") return <UniversityDashboard />;
   if (role === "recruiter")  return <CompanyDashboard />;
   return <StudentDashboard />;

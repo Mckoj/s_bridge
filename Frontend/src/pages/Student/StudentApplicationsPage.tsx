@@ -115,7 +115,7 @@ export default function StudentApplicationsPage() {
     switch (status) {
       case "ACCEPTED":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
             <CheckCircle2 size={13} /> Accepted
           </span>
         );
@@ -356,7 +356,7 @@ export default function StudentApplicationsPage() {
                 {selectedApp.matchScore !== undefined && (
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400">Skill Match Score:</span>
-                    <span className="font-bold text-emerald-400">{selectedApp.matchScore}%</span>
+                    <span className="font-bold text-blue-400">{selectedApp.matchScore}%</span>
                   </div>
                 )}
               </div>

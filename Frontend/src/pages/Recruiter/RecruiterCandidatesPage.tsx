@@ -1,5 +1,6 @@
 import { useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
+import { useDashboard } from "../../context/DashboardContext";
 import { useRecruiterCandidates } from "../../hooks/useRecruiterCandidates";
 import { useRecruiterInterviews } from "../../hooks/useRecruiterInterviews";
 import {
@@ -14,6 +15,8 @@ import { Users, Search } from "lucide-react";
 import type { RecruiterCandidate } from "../../services/recruiterService";
 
 export default function RecruiterCandidatesPage() {
+  const { theme } = useDashboard();
+  const dark = theme === "dark";
   const [search, setSearch] = useState("");
   const [selectedCandidate, setSelectedCandidate] = useState<RecruiterCandidate | null>(null);
   const [interviewModalOpen, setInterviewModalOpen] = useState(false);
@@ -45,14 +48,14 @@ export default function RecruiterCandidatesPage() {
           title="Applicant Talent Pool"
           description="Explore student candidates who have applied to your company's internship postings."
         >
-          <div className="flex items-center gap-2 rounded-xl px-3 py-2 border max-w-md bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-            <Search size={16} className="text-slate-400 shrink-0" />
+          <div className={`flex max-w-md items-center gap-2 rounded-xl border px-3 py-2 ${dark ? "border-slate-800 bg-slate-950/70" : "border-slate-200 bg-slate-50"} focus-within:border-emerald-500`}>
+            <Search size={16} className={`shrink-0 ${dark ? "text-slate-400" : "text-slate-500"}`} />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search candidate by name, skills, role, or programme..."
-              className="bg-transparent text-xs outline-none w-full text-slate-800 dark:text-white placeholder-slate-400"
+              className={`w-full bg-transparent text-xs outline-none ${dark ? "text-white placeholder:text-slate-500" : "text-slate-800 placeholder:text-slate-400"}`}
             />
           </div>
         </PageHeader>

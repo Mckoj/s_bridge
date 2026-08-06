@@ -52,4 +52,13 @@ export const roleConfig = {
     bg: "bg-emerald-600/10",
     iconBg: "bg-emerald-500",
   },
+  admin: {
+    label: "Admin",
+    color: "border-amber-500 text-amber-500 bg-amber-500/5",
+    accent: "bg-amber-600 hover:bg-amber-700 focus:ring-amber-500/20 shadow-amber-600/10",
+    text: "text-amber-400",
+    glow: "shadow-amber-500/10",
+    bg: "bg-amber-600/10",
+    iconBg: "bg-amber-500",
+  },
 } as const;

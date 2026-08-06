@@ -170,7 +170,7 @@ export default function StudentSettingsPage() {
           </h2>
 
           {passwordMsg && (
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold flex items-center gap-2">
               <CheckCircle2 size={15} /> {passwordMsg}
             </div>
           )}

@@ -23,17 +23,26 @@ export default function LoginPage() {
 
   const config = roleConfig[selectedRole];
 
+  const normalizeRole = (value?: string): UserRole | null => {
+    const normalized = value?.toLowerCase();
+    if (normalized === "student") return "student";
+    if (normalized === "university") return "university";
+    if (normalized === "recruiter" || normalized === "company") return "recruiter";
+    if (normalized === "admin" || normalized === "administrator" || normalized === "superadmin") return "admin";
+    return null;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
     setLocalError(null);
     try {
       const userData = await login(email, password);
-      const backendRole = (userData?.role || "").toLowerCase();
-      if (backendRole !== selectedRole) {
+      const backendRole = normalizeRole(userData?.role);
+      if (!backendRole || backendRole !== selectedRole) {
         await logout();
         setLocalError(
-          `Selected role does not match account role (${backendRole}). Please choose the correct role.`
+          `Selected role does not match account role (${userData?.role || "unknown"}). Please choose the correct role.`
         );
         return;
       }
@@ -60,9 +69,13 @@ export default function LoginPage() {
             <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block mb-3 text-center">
               Identify Your Portal Role
             </label>
-            <div className="grid grid-cols-3 gap-3">
-              {(["student", "university", "recruiter"] as UserRole[]).map((role) => {
-                const icons = { student: GraduationCap, university: Building2, recruiter: Briefcase };
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {(["student", "university", "recruiter"] as Array<"student" | "university" | "recruiter">).map((role) => {
+                const icons: Record<"student" | "university" | "recruiter", React.ComponentType<{ size?: number }>> = {
+                  student: GraduationCap,
+                  university: Building2,
+                  recruiter: Briefcase,
+                };
                 const Icon = icons[role];
                 return (
                   <button
@@ -80,6 +93,16 @@ export default function LoginPage() {
                   </button>
                 );
               })}
+            </div>
+
+            <div className="mt-3 text-center">
+              <button
+                type="button"
+                onClick={() => setSelectedRole("admin")}
+                className="text-[11px] font-semibold text-slate-500 hover:text-amber-400 transition-colors"
+              >
+                Admin sign in
+              </button>
             </div>
           </div>
         )}
@@ -143,6 +166,7 @@ export default function LoginPage() {
               </>
             )}
           </AuthButton>
+
         </form>
 
         <AuthDivider />

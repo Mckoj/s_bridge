@@ -194,7 +194,7 @@ export default function StudentProfilePage() {
 
         {/* Feedback Banners */}
         {successMsg && (
-          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2 animate-fade-in">
+          <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold flex items-center gap-2 animate-fade-in">
             <CheckCircle2 size={16} /> {successMsg}
           </div>
         )}

@@ -124,9 +124,9 @@ export default function StudentInterviewsPage() {
                     </div>
                     <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${
                       item.status === "UPCOMING"
-                        ? "bg-purple-500/15 text-purple-400 border border-purple-500/30"
+                        ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
                         : item.status === "COMPLETED"
-                        ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                        ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
                         : "bg-slate-500/15 text-slate-400 border border-slate-500/30"
                     }`}>
                       {item.status}
@@ -184,12 +184,12 @@ export default function StudentInterviewsPage() {
 // ─── AI Mock Interview Card — Coming Soon overlay ───
 function AIMockInterviewCard({ dark }: { dark: boolean }) {
   return (
-    <div className={`relative overflow-hidden p-6 rounded-3xl border shadow-xl ${dark ? "bg-slate-900/80 border-purple-500/30" : "bg-white border-purple-200"}`}>
+    <div className={`relative overflow-hidden p-6 rounded-3xl border shadow-xl ${dark ? "bg-slate-900/80 border-blue-500/30" : "bg-white border-blue-200"}`}>
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 bg-slate-950/75 backdrop-blur-md text-center rounded-3xl">
-        <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center justify-center mb-2 animate-pulse">
+        <div className="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center mb-2 animate-pulse">
           <Sparkles size={22} />
         </div>
-        <span className="text-[10px] font-extrabold bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full border border-purple-500/40">
+        <span className="text-[10px] font-extrabold bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full border border-blue-500/40">
           AI FEATURE • COMING SOON
         </span>
         <p className="text-xs font-extrabold text-white mt-2">AI Voice &amp; Technical Simulator</p>

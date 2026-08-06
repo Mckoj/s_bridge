@@ -25,17 +25,20 @@ import {
   PlusSquare,
   ClipboardList,
   BookOpen,
+  Building,
+  Shield,
 } from "lucide-react";
 
 const roleNav = {
   student: [
     { label: "Dashboard",           icon: LayoutDashboard, path: "/dashboard" },
-    { label: "Find Opportunities",  icon: Search,          path: "/dashboard/explore" },
-    { label: "My Applications",     icon: FileText,        path: "/dashboard/applications" },
+    { label: "Applications",        icon: FileText,        path: "/dashboard/applications" },
+    { label: "My Internship",       icon: BookOpen,        path: "/dashboard/internship" },
+    { label: "Explore Jobs",        icon: Briefcase,       path: "/dashboard/explore" },
     { label: "Interviews",          icon: CheckSquare,     path: "/dashboard/interviews" },
-    { label: "Placement History",   icon: Briefcase,       path: "/dashboard/placement-history" },
-    { label: "Logbook Reports",     icon: BookOpen,        path: "/dashboard/reports" },
-    { label: "AI Career Assistant", icon: Sparkles,        path: "/dashboard/ai-assistant" },
+    { label: "Placement History",   icon: BarChart2,       path: "/dashboard/placement-history" },
+    { label: "Logbook Reports",     icon: ClipboardList,   path: "/dashboard/reports" },
+    { label: "AI Assistant",        icon: Sparkles,        path: "/dashboard/ai-assistant" },
     { label: "Messages",            icon: MessageSquare,   path: "/dashboard/messages" },
     { label: "Notifications",       icon: Bell,            path: "/dashboard/notifications" },
     { label: "Saved Jobs",          icon: ClipboardList,   path: "/dashboard/saved-jobs" },
@@ -65,12 +68,23 @@ const roleNav = {
     { label: "Messages",            icon: MessageSquare,   path: "/dashboard/messages" },
     { label: "Settings",            icon: Settings,        path: "/dashboard/settings" },
   ],
+  admin: [
+    { label: "Dashboard",           icon: LayoutDashboard, path: "/admin/dashboard" },
+    { label: "Students",            icon: Users,           path: "/admin/dashboard/students" },
+    { label: "Recruiters",          icon: Building,        path: "/admin/dashboard/recruiters" },
+    { label: "Opportunities",       icon: Briefcase,       path: "/admin/dashboard/internships" },
+    { label: "Applications",        icon: FileText,        path: "/admin/dashboard/applications" },
+    { label: "Logbook Reports",     icon: ClipboardList,   path: "/admin/dashboard/reports" },
+    { label: "Audit Logs",          icon: Shield,          path: "/admin/dashboard/audit-logs" },
+    { label: "Settings",            icon: Settings,        path: "/admin/dashboard/settings" },
+  ],
 };
 
 const roleAccent = {
-  student:    { activeBg: "bg-blue-500",    avatarBg: "bg-blue-500",    roleLabel: "Student"         },
-  university: { activeBg: "bg-purple-600",  avatarBg: "bg-purple-600",  roleLabel: "University Admin" },
-  recruiter:  { activeBg: "bg-emerald-600", avatarBg: "bg-emerald-600", roleLabel: "Company Admin"    },
+  student:    { activeBg: "bg-blue-500",    avatarBg: "bg-blue-500",    focusBorder: "focus-within:border-blue-500",    actionText: "text-blue-500",    unreadBg: "bg-blue-500/10",    iconColor: "text-blue-400",    roleLabel: "Student" },
+  university: { activeBg: "bg-purple-600",  avatarBg: "bg-purple-600",  focusBorder: "focus-within:border-purple-500",  actionText: "text-purple-500",  unreadBg: "bg-purple-500/10",  iconColor: "text-purple-400",  roleLabel: "University Admin" },
+  recruiter:  { activeBg: "bg-emerald-600", avatarBg: "bg-emerald-600", focusBorder: "focus-within:border-emerald-500", actionText: "text-emerald-600 dark:text-emerald-400", unreadBg: "bg-emerald-500/10", iconColor: "text-emerald-400", roleLabel: "Company Admin" },
+  admin:      { activeBg: "bg-rose-600",    avatarBg: "bg-rose-600",    focusBorder: "focus-within:border-rose-500",    actionText: "text-rose-500",    unreadBg: "bg-rose-500/10",    iconColor: "text-rose-400",    roleLabel: "System Admin" },
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -117,6 +131,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       ? location.pathname === "/dashboard"
       : location.pathname.startsWith(path);
 
+  const accountPath = (section: "profile" | "settings") =>
+    role === "admin" ? `/admin/dashboard/${section}` : `/dashboard/${section}`;
+
   // Close dropdowns on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -131,8 +148,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setNotifOpen(false);
+        setProfileOpen(false);
+        setSidebarOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, []);
+
   // ── Sidebar ─────────────────────────────────────────────────────────────────
-  const Sidebar = () => (
+  const sidebar = (
     <aside className={`
       fixed inset-y-0 left-0 z-40 w-56 flex flex-col shadow-sm
       border-r transition-colors duration-200
@@ -149,7 +178,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <span className={`font-extrabold text-base tracking-tight ${isDark ? "text-white" : "text-slate-800"}`}>
           SBridge
         </span>
-        <button className={`ml-auto lg:hidden ${isDark ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"}`} onClick={() => setSidebarOpen(false)}>
+        <button aria-label="Close navigation" className={`ml-auto lg:hidden ${isDark ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"}`} onClick={() => setSidebarOpen(false)}>
           <X size={16} />
         </button>
       </div>
@@ -196,7 +225,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className={`flex min-h-screen transition-colors duration-200 ${isDark ? "bg-[#020817]" : "bg-slate-50"}`}>
-      <Sidebar />
+      {sidebar}
 
       {sidebarOpen && (
         <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setSidebarOpen(false)} />
@@ -211,6 +240,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           ${isDark ? "bg-[#0f172a] border-slate-800" : "bg-white border-slate-200"}
         `}>
           <button
+            aria-label="Open navigation"
             className={`lg:hidden p-2 rounded-lg transition-colors ${isDark ? "text-slate-400 hover:bg-slate-800" : "text-slate-500 hover:bg-slate-100"}`}
             onClick={() => setSidebarOpen(true)}
           >
@@ -222,8 +252,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Search Bar */}
           <div className={`hidden sm:flex items-center gap-2 rounded-xl px-3 py-2 w-64 border transition-all duration-200
             ${isDark
-              ? "bg-slate-800/80 border-slate-700 focus-within:border-blue-500"
-              : "bg-slate-100 border-slate-200 focus-within:border-blue-500 focus-within:bg-white"
+              ? `bg-slate-800/80 border-slate-700 ${accent.focusBorder}`
+              : `bg-slate-100 border-slate-200 ${accent.focusBorder} focus-within:bg-white`
             }`}>
             <Search size={14} className={`shrink-0 ${isDark ? "text-slate-400" : "text-slate-500"}`} />
             <input
@@ -244,6 +274,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Dark / Light toggle */}
           <button
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             onClick={toggleTheme}
             title={isDark ? "Switch to light mode" : "Switch to dark mode"}
             className={`p-2 rounded-lg transition-all duration-200 cursor-pointer
@@ -258,6 +289,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Notifications */}
           <div className="relative" ref={notifRef}>
             <button
+              aria-label="Open notifications"
+              aria-expanded={notifOpen}
               onClick={() => {
                 setNotifOpen(!notifOpen);
                 setProfileOpen(false);
@@ -275,7 +308,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 ${isDark ? "bg-[#0f172a] border-slate-700" : "bg-white border-slate-200"}`}>
                 <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? "border-slate-700" : "border-slate-100"}`}>
                   <span className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-800"}`}>Notifications</span>
-                  <button onClick={markAllNotificationsRead} className="text-xs text-blue-500 font-semibold hover:underline cursor-pointer">
+                  <button onClick={markAllNotificationsRead} className={`text-xs font-semibold hover:underline cursor-pointer ${accent.actionText}`}>
                     Mark all read
                   </button>
                 </div>
@@ -285,7 +318,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   ) : notifications.map(n => (
                     <div key={n.id} className={`px-4 py-3 border-b text-xs transition-colors
                       ${isDark ? "border-slate-800 hover:bg-slate-800/60" : "border-slate-50 hover:bg-slate-50"}
-                      ${!n.read ? (isDark ? "bg-blue-500/10" : "bg-blue-50") : ""}`}>
+                      ${!n.read ? (isDark ? accent.unreadBg : accent.unreadBg) : ""}`}>
                       <p className={`font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>{n.text}</p>
                       <p className={`mt-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>{n.time}</p>
                     </div>
@@ -296,16 +329,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           {/* Messages link */}
-          <button
+          {role !== "admin" && <button
+            aria-label="Open messages"
             onClick={() => navigate("/dashboard/messages")}
             className={`p-2 rounded-lg transition-colors cursor-pointer ${isDark ? "text-slate-400 hover:bg-slate-800" : "text-slate-500 hover:bg-slate-100"}`}
           >
             <MessageSquare size={18} />
-          </button>
+          </button>}
 
           {/* User Profile Dropdown */}
           <div className="relative" ref={profileRef}>
             <button
+              aria-label="Open account menu"
+              aria-expanded={profileOpen}
               onClick={() => {
                 setProfileOpen(!profileOpen);
                 setNotifOpen(false);
@@ -362,26 +398,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <button
                     onClick={() => {
                       setProfileOpen(false);
-                      navigate("/dashboard/profile");
+                      navigate(accountPath("profile"));
                     }}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left cursor-pointer ${
                       isDark ? "text-slate-300 hover:bg-slate-800 hover:text-white" : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    <User size={15} className="text-blue-400" />
+                    <User size={15} className={accent.iconColor} />
                     <span>My Profile</span>
                   </button>
 
                   <button
                     onClick={() => {
                       setProfileOpen(false);
-                      navigate("/dashboard/settings");
+                      navigate(accountPath("settings"));
                     }}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left cursor-pointer ${
                       isDark ? "text-slate-300 hover:bg-slate-800 hover:text-white" : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    <Settings size={15} className="text-purple-400" />
+                    <Settings size={15} className={accent.iconColor} />
                     <span>Account Settings</span>
                   </button>
 
