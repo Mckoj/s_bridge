@@ -152,24 +152,37 @@ async function main() {
     }
   });
 
-  // University
-  const demoUniversityUser = await prisma.user.create({
-    data: {
-      email: 'uni@sbridge.com',
-      passwordHash,
-      role: 'UNIVERSITY',
-      isVerified: true
-    }
-  });
+  // Ghanaian Universities
+  const SCHOOLS = [
+    { name: 'KNUST (Kwame Nkrumah University of Science and Technology)', email: 'knust@sbridge.edu', domain: 'knust.edu.gh' },
+    { name: 'University of Ghana', email: 'ug@sbridge.edu', domain: 'ug.edu.gh' },
+    { name: 'University of Cape Coast (UCC)', email: 'ucc@sbridge.edu', domain: 'ucc.edu.gh' },
+    { name: 'University of Health and Allied Sciences (UHAS)', email: 'uhas@sbridge.edu', domain: 'uhas.edu.gh' },
+    { name: 'University of Mines and Technology (UMaT)', email: 'umat@sbridge.edu', domain: 'umat.edu.gh' },
+    { name: 'University for Development Studies (UDS)', email: 'uds@sbridge.edu', domain: 'uds.edu.gh' },
+    { name: 'Central University', email: 'central@sbridge.edu', domain: 'central.edu.gh' },
+    { name: 'Pentecost University', email: 'pentvars@sbridge.edu', domain: 'pentvars.edu.gh' },
+  ];
 
-  await prisma.university.create({
-    data: {
-      userId: demoUniversityUser.id,
-      universityName: 'S-Bridge University',
-      domain: 'sbridge.edu',
-      contactEmail: 'placements@sbridge.edu'
-    }
-  });
+  for (const school of SCHOOLS) {
+    const universityUser = await prisma.user.create({
+      data: {
+        email: school.email,
+        passwordHash,
+        role: 'UNIVERSITY',
+        isVerified: true
+      }
+    });
+
+    await prisma.university.create({
+      data: {
+        userId: universityUser.id,
+        universityName: school.name,
+        domain: school.domain,
+        contactEmail: school.email
+      }
+    });
+  }
 
   // Admin
   await prisma.user.create({

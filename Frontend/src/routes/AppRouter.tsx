@@ -58,6 +58,7 @@ import RecruiterProfilePage from "../pages/Recruiter/RecruiterProfilePage";
 // excluded from the initial bundle for all other portal hostnames.
 const AdminDashboard      = lazy(() => import("../pages/Admin/AdminDashboard"));
 const AdminStudentsPage   = lazy(() => import("../pages/Admin/AdminStudentsPage"));
+const AdminUniversitiesPage = lazy(() => import("../pages/Admin/AdminUniversitiesPage"));
 const AdminRecruitersPage = lazy(() => import("../pages/Admin/AdminRecruitersPage"));
 const AdminInternshipsPage  = lazy(() => import("../pages/Admin/AdminInternshipsPage"));
 const AdminApplicationsPage = lazy(() => import("../pages/Admin/AdminApplicationsPage"));
@@ -221,6 +222,7 @@ const adminRoutes = (
   <>
     <Route path="/admin/dashboard"             element={<AdminPage><AdminDashboard /></AdminPage>} />
     <Route path="/admin/dashboard/students"    element={<AdminPage><AdminStudentsPage /></AdminPage>} />
+    <Route path="/admin/dashboard/universities" element={<AdminPage><AdminUniversitiesPage /></AdminPage>} />
     <Route path="/admin/dashboard/recruiters"  element={<AdminPage><AdminRecruitersPage /></AdminPage>} />
     <Route path="/admin/dashboard/internships" element={<AdminPage><AdminInternshipsPage /></AdminPage>} />
     <Route path="/admin/dashboard/applications" element={<AdminPage><AdminApplicationsPage /></AdminPage>} />

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { getSavedJobs, saveJob, unsaveJob } from "../services/savedJobsService";
 import type { SavedJob } from "../services/savedJobsService";
 import type { ClassifiedApiError } from "../utils/apiErrors";
-import { queryCache } from "../utils/queryCache";
+import { queryCache, TTL } from "../utils/queryCache";
 
 interface UseSavedJobsResult {
   savedJobs: SavedJob[];
@@ -33,7 +33,7 @@ export function useSavedJobs(): UseSavedJobsResult {
     try {
       const data = await getSavedJobs();
       setSavedJobs(data);
-      queryCache.set(CACHE_KEY, data);
+      queryCache.set(CACHE_KEY, data, TTL.MEDIUM);
     } catch (err: any) {
       setError(err as ClassifiedApiError);
     } finally {

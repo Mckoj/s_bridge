@@ -59,3 +59,18 @@ html.lenis {
 @utility animate-fade-in {
   animation: fade-in 0.6s ease-out forwards;
 }
+
+/* Global Dark Mode Text Color Fixes */
+.dark body,
+.dark {
+  color: #f8fafc;
+}
+
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: #ffffff;
+}

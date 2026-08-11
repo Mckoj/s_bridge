@@ -71,6 +71,7 @@ const roleNav = {
   admin: [
     { label: "Dashboard",           icon: LayoutDashboard, path: "/admin/dashboard" },
     { label: "Students",            icon: Users,           path: "/admin/dashboard/students" },
+    { label: "Universities",        icon: Building,        path: "/admin/dashboard/universities" },
     { label: "Recruiters",          icon: Building,        path: "/admin/dashboard/recruiters" },
     { label: "Opportunities",       icon: Briefcase,       path: "/admin/dashboard/internships" },
     { label: "Applications",        icon: FileText,        path: "/admin/dashboard/applications" },
@@ -127,8 +128,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const isActive = (path: string) =>
-    path === "/dashboard"
-      ? location.pathname === "/dashboard"
+    path === "/dashboard" || path === "/admin/dashboard"
+      ? location.pathname === path
       : location.pathname.startsWith(path);
 
   const accountPath = (section: "profile" | "settings") =>

@@ -238,7 +238,7 @@ export default function StudentDashboard() {
                   <Sparkles size={14} />
                   S-Bridge Student Portal
                 </div>
-                <h1 className="mt-3 text-3xl lg:text-4xl font-extrabold tracking-tight">
+                <h1 className={`mt-3 text-3xl lg:text-4xl font-extrabold tracking-tight ${dark ? "text-white" : "text-slate-900"}`}>
                   Welcome back, {displayName}! 👋
                 </h1>
                 <p

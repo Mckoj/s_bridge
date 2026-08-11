@@ -88,7 +88,7 @@ export default function StudentAICareerAssistantPage() {
                   <Sparkles size={14} />
                   S-Bridge AI Intelligence Engine
                 </div>
-                <h1 className="mt-2 text-2xl lg:text-3xl font-extrabold tracking-tight">
+                <h1 className={`mt-2 text-2xl lg:text-3xl font-extrabold tracking-tight ${dark ? "text-white" : "text-slate-900"}`}>
                   AI Career Assistant & Skill Roadmap
                 </h1>
                 <p className="mt-1 text-xs lg:text-sm font-medium text-slate-400">
