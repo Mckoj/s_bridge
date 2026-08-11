@@ -34,28 +34,32 @@ export default function RecruiterAnalyticsPage() {
                 value={data.totalApplications}
                 subtitle="All candidate submissions"
                 icon={Users}
-                color="emerald"
+                iconBg="bg-emerald-500/10"
+                iconColor="text-emerald-500"
               />
               <StatCard
                 title="Conversion Rate"
                 value={`${data.conversionRate}%`}
                 subtitle="Applied to Accepted ratio"
                 icon={Award}
-                color="blue"
+                iconBg="bg-blue-500/10"
+                iconColor="text-blue-500"
               />
               <StatCard
                 title="Interviews Scheduled"
                 value={data.interviewsScheduled}
                 subtitle="Candidate interview meetings"
                 icon={Calendar}
-                color="purple"
+                iconBg="bg-purple-500/10"
+                iconColor="text-purple-500"
               />
               <StatCard
                 title="Active Listings"
                 value={data.activeListings}
                 subtitle={`Out of ${data.totalListings} total postings`}
                 icon={Briefcase}
-                color="amber"
+                iconBg="bg-amber-500/10"
+                iconColor="text-amber-500"
               />
             </div>
 
