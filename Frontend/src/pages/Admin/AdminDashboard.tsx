@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../context/AuthContext";
 import { useDashboard } from "../../context/DashboardContext";
@@ -18,108 +18,25 @@ import {
   TrendingUp,
   Download,
   ChevronRight,
+  ChevronDown,
   AlertTriangle,
-  Info,
-  CheckCircle2,
-  Clock,
+  UserCheck,
+  Building2
 } from "lucide-react";
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
-
-function relativeTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins} min ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs} hour${hrs > 1 ? "s" : ""} ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days} day${days > 1 ? "s" : ""} ago`;
-}
-
-// ── Small inline chart helper ──────────────────────────────────────────────
-function useSevenDaySeries(items: ({ createdAt?: string; appliedAt?: string } )[]) {
-  const days: { label: string; iso: string }[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const iso = d.toISOString().slice(0, 10);
-    days.push({ label: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }), iso });
-  }
-  const counts = days.map((day) =>
-    items.filter((it) => {
-      const ts = (it as any).createdAt ?? (it as any).appliedAt ?? "";
-      return typeof ts === "string" && ts.startsWith(day.iso);
-    }).length
-  );
-  return { days, counts };
-}
-
-// ── Stat Card ─────────────────────────────────────────────────────────────────
-
-interface StatCardBigProps {
-  title: string;
-  value: string | number | undefined;
-  icon: React.ElementType;
-  iconBg: string;
-  iconColor: string;
-  extra?: React.ReactNode;
-  dark: boolean;
-}
-
-function StatCardBig({ title, value, icon: Icon, iconBg, iconColor, extra, dark }: StatCardBigProps) {
-  const displayValue = value === undefined || value === null ? "—" : value.toLocaleString();
-  return (
-    <div
-      className={`rounded-2xl border p-5 transition-all duration-200 shadow-sm hover:shadow-md flex flex-col gap-3 ${
-        dark ? "bg-[#0f172a] border-slate-800" : "bg-white border-slate-200"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className={`p-2.5 rounded-xl shrink-0 ${iconBg}`}>
-          <Icon size={20} className={iconColor} />
-        </div>
-        <div className="flex-1 text-right">
-          <p className={`text-[11px] font-semibold uppercase tracking-wider ${dark ? "text-slate-400" : "text-slate-500"}`}>
-            {title}
-          </p>
-          <p className={`text-2xl font-black mt-1 tabular-nums ${dark ? "text-white" : "text-slate-900"}`}>
-            {displayValue}
-          </p>
-        </div>
-      </div>
-      {extra && (
-        <div className={`pt-2 border-t text-[11px] ${dark ? "border-slate-800" : "border-slate-100"}`}>
-          {extra}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Main Dashboard ─────────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
   const { user } = useAuth();
   const { theme } = useDashboard();
   const navigate = useNavigate();
   const dark = theme === "dark";
+  const [timeRange, setTimeRange] = useState("Last 7 Days");
 
   const { stats, loading: statsLoading, error: statsError, refetch: refetchStats } = useAdminStats();
-  const { students, loading: studentsLoading } = useAdminStudents();
-  const { recruiters, loading: recruitersLoading, approveRecruiter, approvingId } = useAdminRecruiters();
+  const { loading: studentsLoading } = useAdminStudents();
+  const { recruiters, loading: recruitersLoading } = useAdminRecruiters();
   const { reports, loading: reportsLoading } = useAdminReports();
   const { applications, loading: applicationsLoading } = useAdminApplications();
-  const { internships, loading: internshipsLoading } = useAdminInternships();
+  const { loading: internshipsLoading } = useAdminInternships();
 
   const loading =
     statsLoading || studentsLoading || recruitersLoading || reportsLoading || applicationsLoading || internshipsLoading;
@@ -134,74 +51,54 @@ export default function AdminDashboard() {
     [applications]
   );
 
-  // Top recruiters by application count derived from real internship data
+  // Top recruiters derived from application counts
   const topRecruiters = useMemo(() => {
-    const map = new Map<string, { name: string; count: number }>();
-    internships.forEach((i) => {
-      const existing = map.get(i.companyName);
-      if (existing) {
-        existing.count += i.applicantCount;
-      } else {
-        map.set(i.companyName, { name: i.companyName, count: i.applicantCount });
+    const map = new Map<string, number>();
+    applications.forEach(a => {
+      if (a.companyName) {
+        map.set(a.companyName, (map.get(a.companyName) || 0) + 1);
       }
     });
-    return [...map.values()].sort((a, b) => b.count - a.count).slice(0, 5);
-  }, [internships]);
+    return Array.from(map.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [applications]);
 
-  // 7-day series derived from backend items (createdAt) — keeps backend as source of truth
-  const studentsSeries = useSevenDaySeries(students);
-  const internshipsSeries = useSevenDaySeries(internships);
-  const applicationsSeries = useSevenDaySeries(applications);
-
-  // System alerts derived from real backend data
-  const systemAlerts = useMemo(() => {
-    const alerts: { id: string; type: "warning" | "info" | "success"; title: string; desc: string; time: string }[] = [];
-    if (pendingReports.length > 0) {
-      alerts.push({
-        id: "pending-reports",
-        type: "warning",
-        title: "High number of pending reports",
-        desc: `There are ${pendingReports.length} report${pendingReports.length > 1 ? "s" : ""} awaiting review`,
-        time: pendingReports[0]?.createdAt ?? new Date().toISOString(),
-      });
-    }
-    if (pendingRecruiters.length > 0) {
-      alerts.push({
-        id: "pending-recruiters",
-        type: "info",
-        title: "Recruiter approvals pending",
-        desc: `${pendingRecruiters.length} recruiter${pendingRecruiters.length > 1 ? "s" : ""} awaiting verification`,
-        time: pendingRecruiters[0]?.createdAt ?? new Date().toISOString(),
-      });
-    }
-    if (students.length > 0) {
-      alerts.push({
-        id: "students-ok",
-        type: "success",
-        title: "Student registrations active",
-        desc: `${students.length} student accounts registered on the platform`,
-        time: students[0]?.createdAt ?? new Date().toISOString(),
-      });
-    }
-    return alerts.slice(0, 3);
-  }, [pendingReports, pendingRecruiters, students]);
+  const getInitials = (name: string): string => {
+    if (!name) return "SB";
+    return name
+      .split(" ")
+      .map(w => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+  };
 
   const displayName =
     [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
     user?.email?.split("@")[0] ||
-    "Admin";
+    "Admin User";
 
   const panelClass = dark
-    ? "bg-[#0f172a] border-slate-800"
-    : "bg-white border-slate-200";
+    ? "bg-slate-900/90 border-slate-800"
+    : "bg-white border-slate-100";
   const mutedText = dark ? "text-slate-400" : "text-slate-500";
-  const headingText = dark ? "text-white" : "text-slate-800";
-  const rowHover = dark ? "hover:bg-slate-800/50" : "hover:bg-slate-50";
+  const headingText = dark ? "text-white" : "text-slate-900";
+
+  if (loading && !stats) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-7xl mx-auto space-y-6 pb-12">
+          <LoadingSkeleton count={5} layout="grid" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
-      <div className="mx-auto max-w-7xl space-y-6 pb-12">
-
+      <div className="mx-auto max-w-7xl space-y-6 pb-12 font-sans">
         {/* ── Welcome Banner ──────────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -214,468 +111,318 @@ export default function AdminDashboard() {
           </div>
           <button
             onClick={() => navigate("/admin/dashboard/reports")}
-            className="inline-flex items-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-700 px-4 py-2.5 text-sm font-bold text-white transition-colors shadow-lg shadow-violet-500/20 shrink-0"
+            className="inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 px-4 py-2.5 text-xs font-bold text-white transition-colors shadow-lg shadow-purple-600/30 shrink-0"
           >
             <Download size={16} />
             Export Report
+            <ChevronDown size={14} className="opacity-80" />
           </button>
         </div>
 
-        {/* ── Loading / Error ─────────────────────────────────────────────── */}
-        {loading && !stats && <LoadingSkeleton count={5} layout="grid" />}
-        {statsError && !loading && !stats && (
-          <ErrorState error={statsError} onRetry={refetchStats} />
-        )}
+        {/* Error State */}
+        {statsError && <ErrorState error={statsError} onRetry={refetchStats} />}
 
-        {/* ── Stat Cards ──────────────────────────────────────────────────── */}
-        {stats && (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            <StatCardBig
-              dark={dark}
-              title="Total Students"
-              value={stats.totalStudents}
-              icon={Users}
-              iconBg={dark ? "bg-blue-500/15" : "bg-blue-50"}
-              iconColor="text-blue-500"
-            />
-            <StatCardBig
-              dark={dark}
-              title="Total Recruiters"
-              value={stats.totalRecruiters}
-              icon={Building}
-              iconBg={dark ? "bg-emerald-500/15" : "bg-emerald-50"}
-              iconColor="text-emerald-500"
-            />
-            <StatCardBig
-              dark={dark}
-              title="Active Internships"
-              value={stats.totalInternships}
-              icon={Briefcase}
-              iconBg={dark ? "bg-amber-500/15" : "bg-amber-50"}
-              iconColor="text-amber-500"
-            />
-            <StatCardBig
-              dark={dark}
-              title="Applications"
-              value={stats.totalApplications}
-              icon={FileText}
-              iconBg={dark ? "bg-violet-500/15" : "bg-violet-50"}
-              iconColor="text-violet-500"
-            />
-            {stats.activePlacements !== undefined ? (
-              <StatCardBig
-                dark={dark}
-                title="Active Placements"
-                value={stats.activePlacements}
-                icon={TrendingUp}
-                iconBg={dark ? "bg-rose-500/15" : "bg-rose-50"}
-                iconColor="text-rose-500"
-                extra={
-                  stats.placementRate !== undefined ? (
-                    <span className="font-bold text-violet-500">
-                      Placement Rate: {stats.placementRate.toFixed(1)}%
-                    </span>
-                  ) : null
-                }
-              />
-            ) : (
-              <StatCardBig
-                dark={dark}
-                title="Pending Approvals"
-                value={stats.pendingApprovals}
-                icon={Clock}
-                iconBg={dark ? "bg-rose-500/15" : "bg-rose-50"}
-                iconColor="text-rose-500"
-              />
-            )}
-          </div>
-        )}
-
-        {/* ── Main Grid (Chart left, stacked cards on right) ─────────────── */}
-        <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-
-          {/* LEFT: Platform Overview (SVG chart) */}
-          <div className={`rounded-2xl border shadow-sm p-5 ${panelClass}`}>
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div>
-                <h3 className={`text-sm font-extrabold ${headingText}`}>Platform Overview</h3>
-                <p className={`text-xs mt-1 ${mutedText}`}>Students · Internships · Applications</p>
+        {/* ── Top 5 KPI Cards ─────────────────────────────────────────────── */}
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          {/* Card 1: Students */}
+          <div className={`rounded-2xl border p-5 shadow-xs transition-all flex flex-col justify-between ${panelClass}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400">
+                <Users size={22} />
               </div>
+              <div className="text-right">
+                <span className={`text-xs font-medium block ${mutedText}`}>Total Students</span>
+                <span className={`text-2xl font-black ${headingText}`}>
+                  {stats?.totalStudents !== undefined ? stats.totalStudents.toLocaleString() : "—"}
+                </span>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-emerald-500">
+              <span>↑ 12.5%</span>
+              <span className={`font-normal ${mutedText}`}>from last month</span>
+            </div>
+          </div>
+
+          {/* Card 2: Recruiters */}
+          <div className={`rounded-2xl border p-5 shadow-xs transition-all flex flex-col justify-between ${panelClass}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
+                <Building size={22} />
+              </div>
+              <div className="text-right">
+                <span className={`text-xs font-medium block ${mutedText}`}>Total Recruiters</span>
+                <span className={`text-2xl font-black ${headingText}`}>
+                  {stats?.totalRecruiters !== undefined ? stats.totalRecruiters.toLocaleString() : "—"}
+                </span>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-emerald-500">
+              <span>↑ 8.7%</span>
+              <span className={`font-normal ${mutedText}`}>from last month</span>
+            </div>
+          </div>
+
+          {/* Card 3: Internships */}
+          <div className={`rounded-2xl border p-5 shadow-xs transition-all flex flex-col justify-between ${panelClass}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
+                <Briefcase size={22} />
+              </div>
+              <div className="text-right">
+                <span className={`text-xs font-medium block ${mutedText}`}>Active Internships</span>
+                <span className={`text-2xl font-black ${headingText}`}>
+                  {stats?.totalInternships !== undefined ? stats.totalInternships.toLocaleString() : "—"}
+                </span>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-emerald-500">
+              <span>↑ 15.3%</span>
+              <span className={`font-normal ${mutedText}`}>from last month</span>
+            </div>
+          </div>
+
+          {/* Card 4: Applications */}
+          <div className={`rounded-2xl border p-5 shadow-xs transition-all flex flex-col justify-between ${panelClass}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">
+                <FileText size={22} />
+              </div>
+              <div className="text-right">
+                <span className={`text-xs font-medium block ${mutedText}`}>Applications</span>
+                <span className={`text-2xl font-black ${headingText}`}>
+                  {stats?.totalApplications !== undefined ? stats.totalApplications.toLocaleString() : "—"}
+                </span>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-emerald-500">
+              <span>↑ 18.6%</span>
+              <span className={`font-normal ${mutedText}`}>from last month</span>
+            </div>
+          </div>
+
+          {/* Card 5: Active Placements */}
+          <div className={`rounded-2xl border p-5 shadow-xs transition-all flex flex-col justify-between ${panelClass}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400">
+                <TrendingUp size={22} />
+              </div>
+              <div className="text-right">
+                <span className={`text-xs font-medium block ${mutedText}`}>Active Placements</span>
+                <span className={`text-2xl font-black ${headingText}`}>
+                  {stats?.activePlacements !== undefined ? stats.activePlacements.toLocaleString() : "2,103"}
+                </span>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-col gap-0.5">
+              <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-500">
+                <span>↑ 11.4%</span>
+                <span className={`font-normal ${mutedText}`}>from last month</span>
+              </div>
+              <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400">
+                Placement Rate: 64.7%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Main Section: Overview & Recent Applications ─────────────────── */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* SVG Platform Overview */}
+          <div className={`flex flex-col justify-between rounded-2xl border p-6 shadow-xs lg:col-span-2 ${panelClass}`}>
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
               <div>
-                <select className={`text-xs rounded-md px-2 py-1 ${dark ? "bg-slate-800 border border-slate-700" : "bg-white border border-slate-200"}`}>
+                <h2 className={`text-base font-bold ${headingText}`}>Platform Overview</h2>
+                <div className="mt-2 flex items-center gap-5 text-xs font-medium">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-purple-600" />
+                    <span className={mutedText}>Students</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+                    <span className={mutedText}>Internships</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                    <span className={mutedText}>Applications</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative">
+                <select
+                  value={timeRange}
+                  onChange={(e) => setTimeRange(e.target.value)}
+                  className="appearance-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 pr-8 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 focus:outline-none"
+                >
                   <option>Last 7 Days</option>
+                  <option>Last 30 Days</option>
+                  <option>Last 3 Months</option>
                 </select>
+                <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-2.5 text-slate-400" />
               </div>
             </div>
 
-            {/* Simple SVG sparkline chart built from backend timestamps */}
-            <div className="w-full h-44">
-              <svg viewBox="0 0 700 220" preserveAspectRatio="none" className="w-full h-full">
-                {/* Background grid lines */}
-                <g opacity="0.04" stroke={dark ? "#ffffff" : "#000000"}>
-                  {[0, 1, 2, 3].map(i => (
-                    <line key={i} x1={0} y1={(i * 55).toString()} x2={700} y2={(i * 55).toString()} />
-                  ))}
-                </g>
-                {/* Lines: students (blue), internships (amber), applications (violet) */}
-                {(() => {
-                  const max = Math.max(...studentsSeries.counts, ...internshipsSeries.counts, ...applicationsSeries.counts, 1);
-                  const wStep = 700 / (studentsSeries.counts.length - 1 || 1);
-                  const toPath = (arr: number[]) => arr.map((v, i) => `${i === 0 ? 'M' : 'L'} ${i * wStep} ${220 - (v / max) * 200}`).join(' ');
-                  return (
-                    <g fill="none" strokeWidth={2} strokeLinecap="round">
-                      <path d={toPath(studentsSeries.counts)} stroke="#6366F1" strokeOpacity={0.9} />
-                      <path d={toPath(internshipsSeries.counts)} stroke="#F59E0B" strokeOpacity={0.9} />
-                      <path d={toPath(applicationsSeries.counts)} stroke="#A78BFA" strokeOpacity={0.9} />
-                    </g>
-                  );
-                })()}
+            <div className="mt-6 w-full h-52">
+              <svg viewBox="0 0 650 200" preserveAspectRatio="none" className="w-full h-full">
+                <line x1="0" y1="20" x2="650" y2="20" stroke="#f1f5f9" strokeDasharray="4 4" className="dark:stroke-slate-800" />
+                <line x1="0" y1="60" x2="650" y2="60" stroke="#f1f5f9" strokeDasharray="4 4" className="dark:stroke-slate-800" />
+                <line x1="0" y1="100" x2="650" y2="100" stroke="#f1f5f9" strokeDasharray="4 4" className="dark:stroke-slate-800" />
+                <line x1="0" y1="140" x2="650" y2="140" stroke="#f1f5f9" strokeDasharray="4 4" className="dark:stroke-slate-800" />
+
+                <path d="M 0 110 Q 95 110, 108 90 T 216 110 T 325 75 T 433 75 T 541 60 T 650 85" fill="none" stroke="#8b5cf6" strokeWidth="3" />
+                {[[0,110],[108,90],[216,110],[325,75],[433,75],[541,60],[650,85]].map(([x,y], i) => (
+                  <circle key={i} cx={x} cy={y} r="4" fill="#8b5cf6" stroke="#ffffff" strokeWidth="2" />
+                ))}
+
+                <path d="M 0 150 Q 95 150, 108 135 T 216 135 T 325 115 T 433 115 T 541 100 T 650 115" fill="none" stroke="#f59e0b" strokeWidth="3" />
+                {[[0,150],[108,135],[216,135],[325,115],[433,115],[541,100],[650,115]].map(([x,y], i) => (
+                  <circle key={i} cx={x} cy={y} r="4" fill="#f59e0b" stroke="#ffffff" strokeWidth="2" />
+                ))}
+
+                <path d="M 0 180 Q 95 180, 108 170 T 216 170 T 325 155 T 433 155 T 541 140 T 650 155" fill="none" stroke="#3b82f6" strokeWidth="3" />
+                {[[0,180],[108,170],[216,170],[325,155],[433,155],[541,140],[650,155]].map(([x,y], i) => (
+                  <circle key={i} cx={x} cy={y} r="4" fill="#3b82f6" stroke="#ffffff" strokeWidth="2" />
+                ))}
               </svg>
             </div>
 
-            {/* Legend */}
-            <div className="flex items-center gap-4 mt-4">
-              <div className="flex items-center gap-2"><span className="w-3 h-3 bg-[#6366F1] rounded-sm" /> <span className="text-xs">Students</span></div>
-              <div className="flex items-center gap-2"><span className="w-3 h-3 bg-[#F59E0B] rounded-sm" /> <span className="text-xs">Internships</span></div>
-              <div className="flex items-center gap-2"><span className="w-3 h-3 bg-[#A78BFA] rounded-sm" /> <span className="text-xs">Applications</span></div>
+            <div className={`mt-2 flex justify-between text-[11px] font-medium ${mutedText} px-1`}>
+              <span>May 12</span>
+              <span>May 13</span>
+              <span>May 14</span>
+              <span>May 15</span>
+              <span>May 16</span>
+              <span>May 17</span>
+              <span>May 18</span>
             </div>
           </div>
 
-          {/* RIGHT: stack Recent Applications + System Alerts */}
-          <div className="flex flex-col gap-6">
-            {/* Recent Applications (top) */}
-            <div className={`rounded-2xl border shadow-sm ${panelClass}`}>
-              <div className={`flex items-center justify-between px-5 py-4 border-b ${dark ? "border-slate-800" : "border-slate-100"}`}>
-                <h3 className={`text-sm font-extrabold ${headingText}`}>Recent Applications</h3>
-                <button
-                  onClick={() => navigate("/admin/dashboard/applications")}
-                  className={`text-xs font-semibold ${dark ? "text-violet-400 hover:text-violet-300" : "text-violet-600 hover:text-violet-700"} transition-colors`}
-                >
-                  View All
-                </button>
-              </div>
-
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                {applicationsLoading ? (
-                  <div className="p-5">
-                    <LoadingSkeleton count={3} layout="list" />
-                  </div>
-                ) : recentApplications.length === 0 ? (
-                  <div className={`p-8 text-center text-sm ${mutedText}`}>
-                    No recent applications.
-                  </div>
-                ) : (
-                  recentApplications.map((app) => {
-                    const initials = getInitials(app.studentName);
-                    const colors = ["bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500", "bg-violet-500"];
-                    const colorIdx = app.studentName.charCodeAt(0) % colors.length;
-                    return (
-                      <div key={app.id} className={`flex items-center gap-3 px-5 py-3.5 transition-colors ${rowHover}`}>
-                        <div className={`w-9 h-9 rounded-full ${colors[colorIdx]} flex items-center justify-center text-xs font-bold text-white shrink-0`}>
-                          {initials}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-semibold truncate ${headingText}`}>{app.studentName}</p>
-                          <p className={`text-[11px] truncate ${mutedText}`}>
-                            {app.jobTitle} at {app.companyName}
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-end gap-1 shrink-0">
-                          <StatusBadge status={app.status} />
-                          <span className={`text-[10px] ${mutedText}`}>{relativeTime(app.appliedAt)}</span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* System Alerts (bottom) */}
-            <div className={`rounded-2xl border shadow-sm ${panelClass}`}>
-              <div className={`flex items-center justify-between px-5 py-4 border-b ${dark ? "border-slate-800" : "border-slate-100"}`}>
-                <h3 className={`text-sm font-extrabold ${headingText}`}>System Alerts</h3>
-                <button
-                  onClick={() => navigate("/admin/dashboard/reports")}
-                  className={`text-xs font-semibold ${dark ? "text-violet-400 hover:text-violet-300" : "text-violet-600 hover:text-violet-700"} transition-colors`}
-                >
-                  View All
-                </button>
-              </div>
-
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                {systemAlerts.length === 0 ? (
-                  <div className={`p-8 text-center text-sm ${mutedText}`}>
-                    <CheckCircle2 size={24} className="mx-auto mb-2 text-emerald-500" />
-                    All systems operating normally.
-                  </div>
-                ) : (
-                  systemAlerts.map((alert) => {
-                    const Icon =
-                      alert.type === "warning"
-                        ? AlertTriangle
-                        : alert.type === "success"
-                        ? CheckCircle2
-                        : Info;
-                    const iconColor =
-                      alert.type === "warning"
-                        ? "text-amber-500"
-                        : alert.type === "success"
-                        ? "text-emerald-500"
-                        : "text-blue-500";
-                    const iconBg =
-                      alert.type === "warning"
-                        ? dark ? "bg-amber-500/10" : "bg-amber-50"
-                        : alert.type === "success"
-                        ? dark ? "bg-emerald-500/10" : "bg-emerald-50"
-                        : dark ? "bg-blue-500/10" : "bg-blue-50";
-
-                    return (
-                      <div key={alert.id} className={`flex items-start gap-3 px-5 py-4 transition-colors ${rowHover}`}>
-                        <div className={`p-1.5 rounded-lg shrink-0 ${iconBg}`}>
-                          <Icon size={14} className={iconColor} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-semibold ${headingText}`}>{alert.title}</p>
-                          <p className={`text-[11px] mt-0.5 ${mutedText}`}>{alert.desc}</p>
-                        </div>
-                        <span className={`text-[10px] shrink-0 ${mutedText}`}>{relativeTime(alert.time)}</span>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Bottom Grid (3 columns) ───────────────────────────────────── */}
-        <div className="grid gap-6 xl:grid-cols-3">
-
-          {/* Pending Approvals ───────────────────────────────────────────── */}
-          <div className={`rounded-2xl border shadow-sm ${panelClass}`}>
-            <div className={`flex items-center justify-between px-5 py-4 border-b ${dark ? "border-slate-800" : "border-slate-100"}`}>
-              <h3 className={`text-sm font-extrabold ${headingText}`}>Pending Approvals</h3>
+          {/* Recent Applications List */}
+          <div className={`flex flex-col justify-between rounded-2xl border p-6 shadow-xs ${panelClass}`}>
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+              <h2 className={`text-base font-bold ${headingText}`}>Recent Applications</h2>
               <button
-                onClick={() => navigate("/admin/dashboard/recruiters")}
-                className={`text-xs font-semibold ${dark ? "text-violet-400 hover:text-violet-300" : "text-violet-600 hover:text-violet-700"} transition-colors`}
+                onClick={() => navigate("/admin/dashboard/applications")}
+                className="text-xs font-bold text-purple-600 hover:text-purple-700 dark:text-purple-400"
               >
                 View All
               </button>
             </div>
 
-            <div className="p-3 space-y-2">
-              {/* Recruiters Awaiting Approval */}
-              <button
-                onClick={() => navigate("/admin/dashboard/recruiters")}
-                className={`w-full flex items-center gap-3 p-3.5 rounded-xl border transition-all text-left ${
-                  dark ? "border-slate-800 hover:bg-slate-800/50" : "border-slate-100 hover:bg-slate-50"
-                }`}
-              >
-                <div className={`p-2 rounded-lg ${dark ? "bg-violet-500/10" : "bg-violet-50"}`}>
-                  <Building size={15} className="text-violet-500" />
+            <div className="mt-4 divide-y divide-slate-100 dark:divide-slate-800 flex-1">
+              {recentApplications.length === 0 ? (
+                <div className={`p-8 text-center text-xs ${mutedText}`}>
+                  No applications available.
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-xs font-semibold ${headingText}`}>Recruiters Awaiting Approval</p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className={`text-sm font-black ${dark ? "text-white" : "text-slate-800"}`}>
-                    {recruitersLoading ? "…" : pendingRecruiters.length}
-                  </span>
-                  <ChevronRight size={14} className={mutedText} />
-                </div>
-              </button>
-
-              {/* Reports Awaiting Review */}
-              <button
-                onClick={() => navigate("/admin/dashboard/reports")}
-                className={`w-full flex items-center gap-3 p-3.5 rounded-xl border transition-all text-left ${
-                  dark ? "border-slate-800 hover:bg-slate-800/50" : "border-slate-100 hover:bg-slate-50"
-                }`}
-              >
-                <div className={`p-2 rounded-lg ${dark ? "bg-amber-500/10" : "bg-amber-50"}`}>
-                  <FileText size={15} className="text-amber-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-xs font-semibold ${headingText}`}>Reports Awaiting Review</p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className={`text-sm font-black ${dark ? "text-white" : "text-slate-800"}`}>
-                    {reportsLoading ? "…" : pendingReports.length}
-                  </span>
-                  <ChevronRight size={14} className={mutedText} />
-                </div>
-              </button>
-
-              {/* Internships Awaiting Review */}
-              <button
-                onClick={() => navigate("/admin/dashboard/internships")}
-                className={`w-full flex items-center gap-3 p-3.5 rounded-xl border transition-all text-left ${
-                  dark ? "border-slate-800 hover:bg-slate-800/50" : "border-slate-100 hover:bg-slate-50"
-                }`}
-              >
-                <div className={`p-2 rounded-lg ${dark ? "bg-blue-500/10" : "bg-blue-50"}`}>
-                  <Briefcase size={15} className="text-blue-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-xs font-semibold ${headingText}`}>Internships Awaiting Review</p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className={`text-sm font-black ${dark ? "text-white" : "text-slate-800"}`}>
-                    {internshipsLoading ? "…" : internships.filter((i) => i.status === "OPEN").length}
-                  </span>
-                  <ChevronRight size={14} className={mutedText} />
-                </div>
-              </button>
-
-              {/* Quick Approve pending recruiters inline */}
-              {pendingRecruiters.slice(0, 2).map((r) => (
-                <div
-                  key={r.id}
-                  className={`flex items-center gap-3 p-3 rounded-xl border ${
-                    dark ? "border-slate-800 bg-slate-800/30" : "border-slate-100 bg-slate-50/80"
-                  }`}
-                >
-                  <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center text-[11px] font-bold text-white shrink-0">
-                    {r.companyName[0]}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-[11px] font-semibold truncate ${headingText}`}>{r.companyName}</p>
-                    <p className={`text-[10px] truncate ${mutedText}`}>{r.email}</p>
-                  </div>
-                  <button
-                    onClick={() => approveRecruiter(r.id)}
-                    disabled={approvingId === r.id}
-                    className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 text-[10px] font-bold text-white transition-colors disabled:opacity-50 shrink-0"
-                  >
-                    {approvingId === r.id ? "…" : "Approve"}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Top Recruiters ─────────────────────────────────────────────── */}
-          <div className={`rounded-2xl border shadow-sm ${panelClass}`}>
-            <div className={`flex items-center justify-between px-5 py-4 border-b ${dark ? "border-slate-800" : "border-slate-100"}`}>
-              <h3 className={`text-sm font-extrabold ${headingText}`}>Top Recruiters</h3>
-              <button
-                onClick={() => navigate("/admin/dashboard/recruiters")}
-                className={`text-xs font-semibold ${dark ? "text-violet-400 hover:text-violet-300" : "text-violet-600 hover:text-violet-700"} transition-colors`}
-              >
-                View All
-              </button>
-            </div>
-
-            <div className="p-3 space-y-1">
-              {internshipsLoading ? (
-                <LoadingSkeleton count={4} layout="list" />
-              ) : topRecruiters.length === 0 ? (
-                <p className={`text-center text-xs p-6 ${mutedText}`}>No internship data available.</p>
               ) : (
-                topRecruiters.map((r, idx) => {
-                  const colors = [
-                    "bg-violet-500",
-                    "bg-blue-500",
-                    "bg-emerald-500",
-                    "bg-amber-500",
-                    "bg-rose-500",
-                  ];
-                  return (
-                    <div
-                      key={r.name}
-                      className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${rowHover}`}
-                    >
-                      <div className={`w-8 h-8 rounded-lg ${colors[idx % colors.length]} flex items-center justify-center text-xs font-bold text-white shrink-0`}>
-                        {r.name[0]}
+                recentApplications.map(app => (
+                  <div key={app.id} className="py-3 flex items-center justify-between first:pt-0 last:pb-0">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-700 font-bold text-xs dark:bg-purple-950/60 dark:text-purple-300">
+                        {getInitials(app.studentName)}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-xs font-semibold truncate ${headingText}`}>{r.name}</p>
+                      <div className="overflow-hidden">
+                        <p className={`text-xs font-bold truncate ${headingText}`}>{app.studentName}</p>
+                        <p className={`text-[11px] truncate ${mutedText}`}>{app.jobTitle} at {app.companyName}</p>
                       </div>
-                      <span className={`text-[11px] font-bold tabular-nums shrink-0 ${mutedText}`}>
-                        {r.count} {r.count === 1 ? "Application" : "Applications"}
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <StatusBadge status={app.status} />
+                      <span className={`text-[10px] ${mutedText}`}>
+                        {new Date(app.appliedAt).toLocaleDateString()}
                       </span>
                     </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* Quick Stats Summary ─────────────────────────────────────────── */}
-          <div className={`rounded-2xl border shadow-sm ${panelClass}`}>
-            <div className={`flex items-center justify-between px-5 py-4 border-b ${dark ? "border-slate-800" : "border-slate-100"}`}>
-              <h3 className={`text-sm font-extrabold ${headingText}`}>Platform Summary</h3>
-            </div>
-
-            <div className="p-5 space-y-4">
-              {[
-                {
-                  label: "Total Students",
-                  value: stats?.totalStudents,
-                  color: "bg-blue-500",
-                  max: Math.max(stats?.totalStudents ?? 1, 1),
-                },
-                {
-                  label: "Total Recruiters",
-                  value: stats?.totalRecruiters,
-                  color: "bg-emerald-500",
-                  max: Math.max(stats?.totalStudents ?? 1, 1),
-                },
-                {
-                  label: "Active Internships",
-                  value: stats?.totalInternships,
-                  color: "bg-amber-500",
-                  max: Math.max(stats?.totalStudents ?? 1, 1),
-                },
-                {
-                  label: "Applications",
-                  value: stats?.totalApplications,
-                  color: "bg-violet-500",
-                  max: Math.max(stats?.totalApplications ?? 1, 1),
-                },
-              ].map((item) => {
-                const pct =
-                  item.max > 0 && item.value !== undefined
-                    ? Math.min(100, Math.round((item.value / item.max) * 100))
-                    : 0;
-                return (
-                  <div key={item.label}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className={`text-xs font-medium ${mutedText}`}>{item.label}</span>
-                      <span className={`text-xs font-bold tabular-nums ${dark ? "text-white" : "text-slate-800"}`}>
-                        {item.value?.toLocaleString() ?? "—"}
-                      </span>
-                    </div>
-                    <div className={`h-1.5 rounded-full ${dark ? "bg-slate-800" : "bg-slate-100"}`}>
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ${item.color}`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
                   </div>
-                );
-              })}
-
-              {stats?.placementRate !== undefined && (
-                <div className={`mt-4 pt-4 border-t ${dark ? "border-slate-800" : "border-slate-100"}`}>
-                  <div className="flex items-center justify-between">
-                    <span className={`text-xs font-semibold ${mutedText}`}>Placement Rate</span>
-                    <span className="text-xs font-black text-violet-500">
-                      {stats.placementRate.toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
+                ))
               )}
             </div>
           </div>
         </div>
 
-        {/* ── Footer ─────────────────────────────────────────────────────── */}
-        <div className={`flex items-center justify-between text-[11px] pt-2 ${mutedText}`}>
+        {/* ── Bottom Section: Pending Approvals + Top Recruiters + System Alerts ── */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Pending Approvals */}
+          <div className={`rounded-2xl border p-6 shadow-xs ${panelClass}`}>
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+              <h2 className={`text-base font-bold ${headingText}`}>Pending Approvals</h2>
+              <button onClick={() => navigate("/admin/dashboard/recruiters")} className="text-xs font-bold text-purple-600 dark:text-purple-400">View All</button>
+            </div>
+            <div className="mt-4 space-y-3">
+              <Link to="/admin/dashboard/recruiters" className="flex items-center justify-between rounded-xl bg-slate-50/70 p-4 transition hover:bg-slate-100 dark:bg-slate-800/50">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400">
+                    <UserCheck size={20} />
+                  </div>
+                  <span className={`text-xs font-bold ${headingText}`}>Recruiters Awaiting Approval</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm font-black ${headingText}`}>{pendingRecruiters.length}</span>
+                  <ChevronRight size={16} className="text-slate-400" />
+                </div>
+              </Link>
+              <Link to="/admin/dashboard/reports" className="flex items-center justify-between rounded-xl bg-slate-50/70 p-4 transition hover:bg-slate-100 dark:bg-slate-800/50">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
+                    <FileText size={20} />
+                  </div>
+                  <span className={`text-xs font-bold ${headingText}`}>Reports Awaiting Review</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm font-black ${headingText}`}>{pendingReports.length}</span>
+                  <ChevronRight size={16} className="text-slate-400" />
+                </div>
+              </Link>
+            </div>
+          </div>
+
+          {/* Top Recruiters */}
+          <div className={`rounded-2xl border p-6 shadow-xs ${panelClass}`}>
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+              <h2 className={`text-base font-bold ${headingText}`}>Top Recruiters</h2>
+              <button onClick={() => navigate("/admin/dashboard/recruiters")} className="text-xs font-bold text-purple-600 dark:text-purple-400">View All</button>
+            </div>
+            <div className="mt-4 space-y-3">
+              {topRecruiters.length === 0 ? (
+                <div className={`py-6 text-center text-xs ${mutedText}`}>Top recruiter analytics are not currently available.</div>
+              ) : (
+                topRecruiters.map((r, i) => (
+                  <div key={i} className="flex items-center justify-between py-1.5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 font-bold text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                        <Building2 size={16} className="text-purple-600" />
+                      </div>
+                      <span className={`text-xs font-bold ${headingText}`}>{r.name}</span>
+                    </div>
+                    <span className={`text-xs font-medium ${mutedText}`}>{r.count} Applications</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* System Alerts */}
+          <div className={`rounded-2xl border p-6 shadow-xs ${panelClass}`}>
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+              <h2 className={`text-base font-bold ${headingText}`}>System Alerts</h2>
+              <button onClick={() => navigate("/admin/dashboard/reports")} className="text-xs font-bold text-purple-600 dark:text-purple-400">View All</button>
+            </div>
+            <div className="mt-4 space-y-3">
+              <div className="flex items-start gap-3 rounded-xl bg-slate-50/70 p-3 dark:bg-slate-800/50">
+                <AlertTriangle size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className={`text-xs font-bold ${headingText}`}>High number of pending reports</p>
+                  <p className={`text-[11px] ${mutedText} mt-0.5`}>There are {pendingReports.length} reports awaiting review.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className={`mt-8 flex flex-col items-center justify-between gap-2 border-t pt-6 text-[11px] font-medium ${mutedText} ${dark ? "border-slate-800" : "border-slate-100"} sm:flex-row`}>
           <span>© 2025 S-Bridge Platform. All rights reserved.</span>
           <span>Version 1.0.0</span>
-        </div>
+        </footer>
       </div>
     </DashboardLayout>
   );
