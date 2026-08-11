@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useDashboard } from "../../context/DashboardContext";
-import api from "../../services/api";
+import { useConversations } from "../../hooks/useConversations";
 import {
   MessageSquare,
   Search,
@@ -9,98 +9,46 @@ import {
   Sparkles,
 } from "lucide-react";
 
-export interface ChatMessage {
-  id: string;
-  senderId: string;
-  senderName: string;
-  senderRole: "student" | "supervisor" | "university";
-  content: string;
-  timestamp: string;
-}
-
-export interface Conversation {
-  id: string;
-  contactName: string;
-  contactRole: "Company Supervisor" | "University Coordinator";
-  avatarBg: string;
-  lastMessage: string;
-  lastTime: string;
-  unreadCount: number;
-}
-
 function useTheme() {
   return useDashboard().theme === "dark";
 }
 
 export default function StudentMessagesPage() {
   const dark = useTheme();
-  const { searchQuery, setSearchQuery } = useDashboard();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeConvId, setActiveConvId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const { searchQuery } = useDashboard();
   const [inputText, setInputText] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState(searchQuery);
+  const [localSearch, setLocalSearch] = useState("");
 
-  useEffect(() => {
-    setSearch(searchQuery);
-  }, [searchQuery]);
+  const {
+    conversations,
+    activeConvId,
+    setActiveConvId,
+    messages,
+    loading,
+    sendMessage,
+  } = useConversations();
 
-  useEffect(() => {
-    fetchConversations();
-  }, []);
-
-  const fetchConversations = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get("/api/students/conversations");
-      if (res.data && Array.isArray(res.data)) {
-        setConversations(res.data);
-        if (res.data.length > 0) {
-          setActiveConvId(res.data[0].id);
-        }
-      }
-    } catch {
-      setConversations([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSearchChange = (val: string) => {
-    setSearch(val);
-    setSearchQuery(val);
-  };
-
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || !activeConvId) return;
 
-    const newMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      senderId: "me",
-      senderName: "Me",
-      senderRole: "student",
-      content: inputText.trim(),
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
-
-    setMessages((prev) => [...prev, newMsg]);
+    const text = inputText.trim();
     setInputText("");
-
-    api.post(`/api/students/conversations/${activeConvId}/messages`, {
-      content: newMsg.content,
-    }).catch(() => {});
+    try {
+      await sendMessage(text);
+    } catch {
+      // Failed to send
+    }
   };
 
-  const effectiveSearch = (search || searchQuery).toLowerCase();
+  const searchTerm = (localSearch || searchQuery).toLowerCase();
 
   const filteredConversations = conversations.filter(
     (c) =>
-      !effectiveSearch ||
-      c.contactName.toLowerCase().includes(effectiveSearch) ||
-      c.lastMessage.toLowerCase().includes(effectiveSearch) ||
-      c.contactRole.toLowerCase().includes(effectiveSearch)
+      !searchTerm ||
+      c.partner.name.toLowerCase().includes(searchTerm) ||
+      c.partner.role.toLowerCase().includes(searchTerm) ||
+      c.lastMessage.toLowerCase().includes(searchTerm)
   );
 
   const activeConv = conversations.find((c) => c.id === activeConvId);
@@ -164,7 +112,7 @@ export default function StudentMessagesPage() {
                 dark ? "text-slate-400" : "text-slate-500"
               }`}
             >
-              Messaging threads will automatically activate once an industrial attachment or university liaison supervisor is assigned to your profile.
+              Messaging threads will automatically activate once an industrial attachment or university liaison supervisor connects with your profile.
             </p>
           </div>
         ) : (
@@ -189,8 +137,8 @@ export default function StudentMessagesPage() {
                 <input
                   type="text"
                   placeholder="Search contacts..."
-                  value={search}
-                  onChange={(e) => handleSearchChange(e.target.value)}
+                  value={localSearch}
+                  onChange={(e) => setLocalSearch(e.target.value)}
                   className={`w-full pl-9 pr-3 py-2 text-xs rounded-xl border outline-none ${
                     dark
                       ? "bg-slate-900 border-slate-800 text-white placeholder-slate-500 focus:border-indigo-500"
@@ -217,19 +165,23 @@ export default function StudentMessagesPage() {
                       }`}
                     >
                       <div
-                        className={`w-10 h-10 rounded-full font-bold text-white flex items-center justify-center shrink-0 ${conv.avatarBg}`}
+                        className="w-10 h-10 rounded-full font-bold text-white flex items-center justify-center shrink-0 bg-indigo-600"
                       >
-                        {conv.contactName.charAt(0)}
+                        {conv.partner.avatar}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <h4 className="text-xs font-bold truncate">
-                            {conv.contactName}
+                            {conv.partner.name}
                           </h4>
-                          <span className="text-[9px] text-slate-500">{conv.lastTime}</span>
+                          {conv.unreadCount > 0 && (
+                            <span className="bg-indigo-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full">
+                              {conv.unreadCount}
+                            </span>
+                          )}
                         </div>
                         <p className="text-[10px] text-indigo-400 font-semibold mt-0.5">
-                          {conv.contactRole}
+                          {conv.partner.role}
                         </p>
                         <p className="text-[11px] text-slate-400 truncate mt-1">
                           {conv.lastMessage}
@@ -252,9 +204,9 @@ export default function StudentMessagesPage() {
                     }`}
                   >
                     <div
-                      className={`w-10 h-10 rounded-full font-bold text-white flex items-center justify-center shrink-0 ${activeConv.avatarBg}`}
+                      className="w-10 h-10 rounded-full font-bold text-white flex items-center justify-center shrink-0 bg-indigo-600"
                     >
-                      {activeConv.contactName.charAt(0)}
+                      {activeConv.partner.avatar}
                     </div>
                     <div>
                       <h3
@@ -262,31 +214,30 @@ export default function StudentMessagesPage() {
                           dark ? "text-white" : "text-slate-800"
                         }`}
                       >
-                        {activeConv.contactName}
+                        {activeConv.partner.name}
                       </h3>
                       <p className="text-xs font-medium text-indigo-400">
-                        {activeConv.contactRole}
+                        {activeConv.partner.role}
                       </p>
                     </div>
                   </div>
 
                   {/* Message Stream */}
-                  <div className="flex-1 p-4 overflow-y-auto space-y-4">
+                  <div className="flex-1 p-4 overflow-y-auto space-y-4 max-h-[400px]">
                     {messages.length === 0 ? (
                       <div className="text-center py-12 text-xs text-slate-500">
-                        This is the beginning of your conversation with {activeConv.contactName}.
+                        This is the beginning of your conversation with {activeConv.partner.name}.
                       </div>
                     ) : (
                       messages.map((msg) => {
-                        const isMe = msg.senderId === "me";
                         return (
                           <div
                             key={msg.id}
-                            className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
+                            className={`flex flex-col ${msg.isMe ? "items-end" : "items-start"}`}
                           >
                             <div
                               className={`max-w-[80%] p-3.5 rounded-2xl text-xs leading-relaxed ${
-                                isMe
+                                msg.isMe
                                   ? "bg-indigo-600 text-white rounded-br-none shadow-md shadow-indigo-500/10"
                                   : dark
                                   ? "bg-slate-800 text-slate-200 rounded-bl-none"
@@ -296,7 +247,7 @@ export default function StudentMessagesPage() {
                               {msg.content}
                             </div>
                             <span className="text-[9px] text-slate-500 mt-1 px-1">
-                              {msg.timestamp}
+                              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
                         );
@@ -313,7 +264,7 @@ export default function StudentMessagesPage() {
                   >
                     <input
                       type="text"
-                      placeholder={`Message ${activeConv.contactName}...`}
+                      placeholder={`Message ${activeConv.partner.name}...`}
                       value={inputText}
                       onChange={(e) => setInputText(e.target.value)}
                       className={`flex-1 px-4 py-2.5 text-xs rounded-xl border outline-none ${
@@ -343,3 +294,4 @@ export default function StudentMessagesPage() {
     </DashboardLayout>
   );
 }
+

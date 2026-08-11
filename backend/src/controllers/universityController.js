@@ -178,10 +178,109 @@ async function getUniversityAnnouncements(req, res) {
   }
 }
 
+async function getUniversityAnalytics(req, res) {
+  try {
+    const universityId = req.user.university?.id;
+    const studentWhere = universityId ? { universityId } : {};
+
+    const students = await prisma.student.findMany({
+      where: studentWhere,
+      select: {
+        id: true,
+        programme: true,
+        applications: {
+          select: {
+            id: true,
+            status: true,
+            interviews: { select: { id: true } }
+          }
+        },
+        reports: {
+          select: {
+            id: true,
+            status: true
+          }
+        }
+      }
+    });
+
+    const totalStudents = students.length;
+    let appliedStudents = 0;
+    let interviewingStudents = 0;
+    let placedStudents = 0;
+
+    const programmeMap = {};
+    let totalReports = 0;
+    let pendingReports = 0;
+    let approvedReports = 0;
+    let rejectedReports = 0;
+
+    students.forEach(s => {
+      const prog = s.programme || 'General Studies';
+      if (!programmeMap[prog]) {
+        programmeMap[prog] = { programme: prog, totalStudents: 0, placedStudents: 0 };
+      }
+      programmeMap[prog].totalStudents += 1;
+
+      const hasApplied = s.applications.length > 0;
+      const hasInterviewed = s.applications.some(a => a.interviews && a.interviews.length > 0);
+      const isPlaced = s.applications.some(a => a.status === 'ACCEPTED');
+
+      if (hasApplied) appliedStudents++;
+      if (hasInterviewed) interviewingStudents++;
+      if (isPlaced) {
+        placedStudents++;
+        programmeMap[prog].placedStudents += 1;
+      }
+
+      s.reports.forEach(r => {
+        totalReports++;
+        if (r.status === 'PENDING') pendingReports++;
+        else if (r.status === 'APPROVED') approvedReports++;
+        else if (r.status === 'REJECTED') rejectedReports++;
+      });
+    });
+
+    const programmeBreakdown = Object.values(programmeMap).map(p => ({
+      ...p,
+      placementRate: p.totalStudents > 0 ? Number(((p.placedStudents / p.totalStudents) * 100).toFixed(1)) : 0
+    })).sort((a, b) => b.totalStudents - a.totalStudents);
+
+    const placementRate = totalStudents > 0 ? Number(((placedStudents / totalStudents) * 100).toFixed(1)) : 0;
+    const complianceRate = totalReports > 0 ? Number(((approvedReports / totalReports) * 100).toFixed(1)) : 0;
+
+    res.json({
+      success: true,
+      analytics: {
+        placementFunnel: {
+          totalStudents,
+          appliedStudents,
+          interviewingStudents,
+          placedStudents,
+          placementRate
+        },
+        programmeBreakdown,
+        reportCompliance: {
+          totalReports,
+          pendingReports,
+          approvedReports,
+          rejectedReports,
+          complianceRate
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching university analytics:', error);
+    res.status(500).json({ error: 'Failed to fetch university analytics' });
+  }
+}
+
 module.exports = {
   getUniversityStats,
+  getUniversityAnalytics,
   approveRecruiter,
   createAnnouncement,
   getUniversityAnnouncements
 };
+
 

@@ -419,3 +419,44 @@ export const createAnnouncement = async (payload: {
     throw classifyApiError(err);
   }
 };
+
+export interface UniversityAnalyticsData {
+  placementFunnel: {
+    totalStudents: number;
+    appliedStudents: number;
+    interviewingStudents: number;
+    placedStudents: number;
+    placementRate: number;
+  };
+  programmeBreakdown: Array<{
+    programme: string;
+    totalStudents: number;
+    placedStudents: number;
+    placementRate: number;
+  }>;
+  reportCompliance: {
+    totalReports: number;
+    pendingReports: number;
+    approvedReports: number;
+    rejectedReports: number;
+    complianceRate: number;
+  };
+}
+
+/**
+ * Fetch University Analytics
+ * Endpoint: GET /api/universities/analytics
+ */
+export const getUniversityAnalytics = async (): Promise<UniversityAnalyticsData> => {
+  try {
+    const res = await api.get("/api/universities/analytics");
+    const analytics = res.data?.analytics;
+    if (!analytics) {
+      throw classifyApiError({ response: { status: 500, data: { error: "Invalid analytics response" } } });
+    }
+    return analytics;
+  } catch (err) {
+    throw classifyApiError(err);
+  }
+};
+

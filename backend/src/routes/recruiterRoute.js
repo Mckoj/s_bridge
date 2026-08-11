@@ -14,6 +14,10 @@ router.get('/me', authenticate, authorizeRoles('RECRUITER'), recruiterController
 router.get('/stats', authenticate, recruiterController.getRecruiterStats);
 router.get('/me/stats', authenticate, recruiterController.getRecruiterStats);
 
+// Get recruiter analytics
+router.get('/analytics', authenticate, authorizeRoles('RECRUITER'), recruiterController.getRecruiterAnalytics);
+router.get('/me/analytics', authenticate, authorizeRoles('RECRUITER'), recruiterController.getRecruiterAnalytics);
+
 // Upload company logo
 router.post('/upload-logo', authenticate, authorizeRoles('RECRUITER'), requireApprovedRecruiter, upload.single('file'), recruiterController.uploadLogo);
 

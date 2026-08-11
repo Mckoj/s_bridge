@@ -43,6 +43,16 @@ export const getSavedJobs = async (): Promise<SavedJob[]> => {
   }
 };
 
+export const saveJob = async (internshipId: string): Promise<SavedJob> => {
+  try {
+    const res = await api.post("/api/students/saved-jobs", { internshipId });
+    return res.data.savedJob;
+  } catch (err) {
+    const classified = classifyApiError(err);
+    throw classified;
+  }
+};
+
 export const unsaveJob = async (id: string): Promise<void> => {
   try {
     await api.delete(`/api/students/saved-jobs/${id}`);
@@ -55,3 +65,4 @@ export const unsaveJob = async (id: string): Promise<void> => {
     throw classified;
   }
 };
+

@@ -38,6 +38,7 @@ enum NotificationType {
   MATCH
   REPORT
   SYSTEM
+  MESSAGE
 }
 
 model User {
@@ -54,9 +55,13 @@ model User {
   notifications           Notification[]
   emailVerificationTokens EmailVerificationToken[]
   passwordResetTokens     PasswordResetToken[]
+  sentConversations       Conversation[]           @relation("SentConversations")
+  receivedConversations   Conversation[]           @relation("ReceivedConversations")
+  sentMessages            Message[]
 
   @@index([email])
 }
+
 
 model Student {
   id            String         @id @default(uuid())
@@ -298,4 +303,33 @@ model EmailVerificationToken {
   createdAt DateTime @default(now())
 
   @@index([token])
+}
+
+model Conversation {
+  id        String    @id @default(uuid())
+  user1Id   String
+  user1     User      @relation("SentConversations", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2Id   String
+  user2     User      @relation("ReceivedConversations", fields: [user2Id], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+
+  @@unique([user1Id, user2Id])
+  @@index([user1Id])
+  @@index([user2Id])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content        String       @db.Text
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([senderId])
 }

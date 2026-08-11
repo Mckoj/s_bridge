@@ -1,16 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
-import { getRecruiterAnalytics, type RecruiterAnalyticsData } from "../services/recruiterService";
+import { getUniversityAnalytics, type UniversityAnalyticsData } from "../services/universityService";
 import type { ClassifiedApiError } from "../utils/apiErrors";
 
-export interface UseRecruiterAnalyticsResult {
-  data: RecruiterAnalyticsData | null;
+export interface UseUniversityAnalyticsResult {
+  data: UniversityAnalyticsData | null;
   loading: boolean;
   error: ClassifiedApiError | null;
   refetch: () => void;
 }
 
-export function useRecruiterAnalytics(): UseRecruiterAnalyticsResult {
-  const [data, setData] = useState<RecruiterAnalyticsData | null>(null);
+export function useUniversityAnalytics(): UseUniversityAnalyticsResult {
+  const [data, setData] = useState<UniversityAnalyticsData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<ClassifiedApiError | null>(null);
 
@@ -18,7 +18,7 @@ export function useRecruiterAnalytics(): UseRecruiterAnalyticsResult {
     setLoading(true);
     setError(null);
     try {
-      const res = await getRecruiterAnalytics();
+      const res = await getUniversityAnalytics();
       setData(res);
     } catch (err: unknown) {
       setError(err as ClassifiedApiError);
@@ -38,4 +38,3 @@ export function useRecruiterAnalytics(): UseRecruiterAnalyticsResult {
     refetch: fetchAnalytics,
   };
 }
-
