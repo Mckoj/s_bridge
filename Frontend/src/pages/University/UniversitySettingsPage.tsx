@@ -52,7 +52,7 @@ export default function UniversitySettingsPage() {
                 <Sparkles size={14} />
                 Portal Settings
               </div>
-              <h1 className="mt-2 text-2xl lg:text-3xl font-extrabold tracking-tight">
+              <h1 className={`mt-2 text-2xl lg:text-3xl font-extrabold tracking-tight ${dark ? "text-white" : "text-slate-900"}`}>
                 University Settings
               </h1>
               <p className={`mt-1 text-xs lg:text-sm font-medium ${dark ? "text-slate-400" : "text-slate-600"}`}>
