@@ -208,11 +208,122 @@ async function uploadLogo(req, res) {
   }
 }
 
+async function getRecruiterAnalytics(req, res) {
+  try {
+    const recruiter = req.user.recruiter;
+    if (!recruiter) {
+      return res.status(403).json({ error: 'Only registered recruiters can view analytics' });
+    }
+
+    const recruiterId = recruiter.id;
+
+    // Fetch internship listings with applications and required skills
+    const internships = await prisma.internship.findMany({
+      where: { recruiterId },
+      include: {
+        skills: {
+          include: { skill: true }
+        },
+        applications: {
+          select: {
+            id: true,
+            status: true,
+            createdAt: true,
+            interviews: { select: { id: true } }
+          }
+        }
+      }
+    });
+
+    const totalListings = internships.length;
+    const activeListings = internships.filter(i => i.status === 'OPEN').length;
+
+    let totalApplications = 0;
+    let pendingCount = 0;
+    let reviewingCount = 0;
+    let acceptedCount = 0;
+    let rejectedCount = 0;
+    let withdrawnCount = 0;
+    let totalInterviewsScheduled = 0;
+
+    const skillCounts = {};
+
+    const listingsPerformance = internships.map(item => {
+      const appCount = item.applications.length;
+      const accepted = item.applications.filter(a => a.status === 'ACCEPTED').length;
+      
+      totalApplications += appCount;
+
+      item.applications.forEach(app => {
+        if (app.status === 'PENDING') pendingCount++;
+        else if (app.status === 'REVIEWING') reviewingCount++;
+        else if (app.status === 'ACCEPTED') acceptedCount++;
+        else if (app.status === 'REJECTED') rejectedCount++;
+        else if (app.status === 'WITHDRAWN') withdrawnCount++;
+
+        if (app.interviews && app.interviews.length > 0) {
+          totalInterviewsScheduled += app.interviews.length;
+        }
+      });
+
+      item.skills.forEach(s => {
+        const name = s.skill.name;
+        skillCounts[name] = (skillCounts[name] || 0) + 1;
+      });
+
+      return {
+        id: item.id,
+        title: item.title,
+        status: item.status,
+        location: item.location,
+        applicationsCount: appCount,
+        acceptedCount: accepted
+      };
+    });
+
+    const topSkills = Object.entries(skillCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+
+    const conversionRate = totalApplications > 0 
+      ? Number(((acceptedCount / totalApplications) * 100).toFixed(1)) 
+      : 0;
+
+    res.json({
+      success: true,
+      analytics: {
+        totalListings,
+        activeListings,
+        totalApplications,
+        interviewsScheduled: totalInterviewsScheduled,
+        conversionRate,
+        funnel: {
+          applied: totalApplications,
+          pending: pendingCount,
+          underReview: reviewingCount,
+          interviewing: totalInterviewsScheduled,
+          accepted: acceptedCount,
+          rejected: rejectedCount,
+          withdrawn: withdrawnCount
+        },
+        topSkills,
+        listingsPerformance
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching recruiter analytics:', error);
+    res.status(500).json({ error: 'Failed to fetch recruiter analytics' });
+  }
+}
+
 module.exports = {
   getAllRecruiters,
   getRecruiterById,
   getCurrentRecruiterProfile,
   updateRecruiter,
   getRecruiterStats,
+  getRecruiterAnalytics,
   uploadLogo
 };
+

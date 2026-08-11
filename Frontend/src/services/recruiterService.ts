@@ -739,3 +739,50 @@ export async function updateReportStatus(
     throw classifyApiError(err);
   }
 }
+
+export interface RecruiterAnalyticsData {
+  totalListings: number;
+  activeListings: number;
+  totalApplications: number;
+  interviewsScheduled: number;
+  conversionRate: number;
+  funnel: {
+    applied: number;
+    pending: number;
+    underReview: number;
+    interviewing: number;
+    accepted: number;
+    rejected: number;
+    withdrawn: number;
+  };
+  topSkills: Array<{ name: string; count: number }>;
+  listingsPerformance: Array<{
+    id: string;
+    title: string;
+    status: string;
+    location: string;
+    applicationsCount: number;
+    acceptedCount: number;
+  }>;
+}
+
+const ANALYTICS_CACHE_KEY = "recruiter_analytics";
+
+/** Fetch Recruiter Analytics */
+export async function getRecruiterAnalytics(): Promise<RecruiterAnalyticsData> {
+  const cached = queryCache.get<RecruiterAnalyticsData>(ANALYTICS_CACHE_KEY);
+  if (cached) return cached;
+
+  try {
+    const res = await api.get("/api/recruiters/analytics");
+    const analytics = res.data?.analytics;
+    if (!analytics) {
+      throw classifyApiError({ response: { status: 500, data: { error: "Invalid analytics payload shape" } } });
+    }
+    queryCache.set(ANALYTICS_CACHE_KEY, analytics, TTL.SHORT);
+    return analytics;
+  } catch (err: unknown) {
+    throw classifyApiError(err);
+  }
+}
+

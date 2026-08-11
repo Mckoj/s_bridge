@@ -17,20 +17,36 @@ import {
   Building,
   ArrowRight,
   TrendingUp,
-  FileText
+  FileText,
+  Bookmark,
 } from "lucide-react";
-import { getStudentStats, validateCVFile, uploadCV } from "../../services/studentService";
+import { useSavedJobs } from "../../hooks/useSavedJobs";
+
+import {
+  getStudentStats,
+  validateCVFile,
+  uploadCV,
+} from "../../services/studentService";
 import type { StudentStats } from "../../services/studentService";
 import { getInternships } from "../../services/internshipService";
 import type { InternshipItem } from "../../services/internshipService";
-import { getApplications, applyToInternship } from "../../services/applicationService";
+import {
+  getApplications,
+  applyToInternship,
+} from "../../services/applicationService";
 import type { ApplicationItem } from "../../services/applicationService";
 
 function useTheme() {
   return useDashboard().theme === "dark";
 }
 
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function Card({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   const dark = useTheme();
   return (
     <div
@@ -42,7 +58,9 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
     >
       <div
         className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${
-          dark ? "from-blue-500/10 via-transparent to-transparent" : "from-blue-100/50 via-transparent to-transparent"
+          dark
+            ? "from-blue-500/10 via-transparent to-transparent"
+            : "from-blue-100/50 via-transparent to-transparent"
         }`}
       />
       <div className="relative">{children}</div>
@@ -69,11 +87,23 @@ function StatCard({
   return (
     <Card className="p-5 flex items-center justify-between">
       <div>
-        <p className={`text-xs font-semibold mb-1 ${dark ? "text-slate-400" : "text-slate-500"}`}>{title}</p>
-        <p className="text-3xl font-extrabold leading-none tabular-nums">{value}</p>
-        <p className={`text-[11px] font-medium mt-1.5 ${dark ? "text-slate-500" : "text-slate-400"}`}>{subtitle}</p>
+        <p
+          className={`text-xs font-semibold mb-1 ${dark ? "text-slate-400" : "text-slate-500"}`}
+        >
+          {title}
+        </p>
+        <p className="text-3xl font-extrabold leading-none tabular-nums">
+          {value}
+        </p>
+        <p
+          className={`text-[11px] font-medium mt-1.5 ${dark ? "text-slate-500" : "text-slate-400"}`}
+        >
+          {subtitle}
+        </p>
       </div>
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${iconBg} shadow-sm`}>
+      <div
+        className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${iconBg} shadow-sm`}
+      >
         <Icon size={22} className={iconColor} />
       </div>
     </Card>
@@ -84,10 +114,12 @@ export default function StudentDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const dark = useTheme();
+  const { isSaved, toggleSave } = useSavedJobs();
   const rawName = user?.email?.split("@")[0] ?? "Student";
+
   const displayName = user?.firstName
     ? user.firstName
-    : (rawName.charAt(0).toUpperCase() + rawName.slice(1));
+    : rawName.charAt(0).toUpperCase() + rawName.slice(1);
 
   const [stats, setStats] = useState<StudentStats>({
     totalApplications: 0,
@@ -100,7 +132,8 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
 
   // Application Modal state
-  const [selectedInternship, setSelectedInternship] = useState<InternshipItem | null>(null);
+  const [selectedInternship, setSelectedInternship] =
+    useState<InternshipItem | null>(null);
   const [coverLetter, setCoverLetter] = useState("");
   const [applying, setApplying] = useState(false);
   const [applySuccess, setApplySuccess] = useState<string | null>(null);
@@ -119,7 +152,8 @@ export default function StudentDashboard() {
       ]);
 
       if (statsRes.status === "fulfilled") setStats(statsRes.value);
-      if (internshipsRes.status === "fulfilled") setInternships(internshipsRes.value);
+      if (internshipsRes.status === "fulfilled")
+        setInternships(internshipsRes.value);
       if (appsRes.status === "fulfilled") setApplications(appsRes.value);
     } catch (err: any) {
       console.error("Error loading dashboard data:", err);
@@ -172,7 +206,9 @@ export default function StudentDashboard() {
       await uploadCV(file);
       setCvMsg("CV uploaded successfully!");
     } catch (err: any) {
-      setCvMsg(err.response?.data?.error || "Failed to upload CV. Please try again.");
+      setCvMsg(
+        err.response?.data?.error || "Failed to upload CV. Please try again.",
+      );
     } finally {
       setCvUploading(false);
     }
@@ -205,8 +241,11 @@ export default function StudentDashboard() {
                 <h1 className="mt-3 text-3xl lg:text-4xl font-extrabold tracking-tight">
                   Welcome back, {displayName}! 👋
                 </h1>
-                <p className={`mt-1 text-sm ${dark ? "text-slate-400" : "text-slate-600"}`}>
-                  You're one step closer to your dream career. Here is your real-time placement overview.
+                <p
+                  className={`mt-1 text-sm ${dark ? "text-slate-400" : "text-slate-600"}`}
+                >
+                  You're one step closer to your dream career. Here is your
+                  real-time placement overview.
                 </p>
               </div>
 
@@ -246,7 +285,9 @@ export default function StudentDashboard() {
             {/* Next Action Banner */}
             <div
               className={`p-4 rounded-2xl border flex flex-wrap items-center justify-between gap-3 ${
-                dark ? "bg-slate-800/60 border-slate-700/60" : "bg-white/80 border-slate-200"
+                dark
+                  ? "bg-slate-800/60 border-slate-700/60"
+                  : "bg-white/80 border-slate-200"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -255,7 +296,9 @@ export default function StudentDashboard() {
                 </div>
                 <div>
                   <p className="text-xs font-bold">Your Next Action</p>
-                  <p className={`text-xs ${dark ? "text-slate-400" : "text-slate-600"}`}>
+                  <p
+                    className={`text-xs ${dark ? "text-slate-400" : "text-slate-600"}`}
+                  >
                     {applications.length > 0
                       ? `You have ${applications.length} active applications. Check status updates below.`
                       : "No active applications yet. Explore recommended opportunities below!"}
@@ -323,7 +366,9 @@ export default function StudentDashboard() {
                       AI Feature • Coming Soon
                     </span>
                   </h3>
-                  <p className={`text-xs ${dark ? "text-slate-400" : "text-slate-500"}`}>
+                  <p
+                    className={`text-xs ${dark ? "text-slate-400" : "text-slate-500"}`}
+                  >
                     Matching roles based on backend skills matrix
                   </p>
                 </div>
@@ -336,7 +381,9 @@ export default function StudentDashboard() {
               </div>
 
               {loading ? (
-                <div className="py-8 text-center text-xs text-slate-500 animate-pulse">Loading live backend opportunities...</div>
+                <div className="py-8 text-center text-xs text-slate-500 animate-pulse">
+                  Loading live backend opportunities...
+                </div>
               ) : internships.length === 0 ? (
                 <div className="py-8 text-center text-xs text-slate-500 border border-dashed rounded-2xl p-6">
                   No internship listings posted yet by recruiters.
@@ -347,7 +394,9 @@ export default function StudentDashboard() {
                     <div
                       key={item.id}
                       className={`p-4 rounded-2xl border transition-all hover:border-blue-500/40 flex flex-col justify-between space-y-3 ${
-                        dark ? "bg-slate-800/50 border-slate-700/60" : "bg-slate-50/80 border-slate-200"
+                        dark
+                          ? "bg-slate-800/50 border-slate-700/60"
+                          : "bg-slate-50/80 border-slate-200"
                       }`}
                     >
                       <div>
@@ -359,11 +408,17 @@ export default function StudentDashboard() {
                             Match Score: Coming Soon
                           </span>
                         </div>
-                        <h4 className="mt-3 text-sm font-bold truncate">{item.title}</h4>
-                        <p className={`text-xs font-semibold ${dark ? "text-blue-400" : "text-blue-600"}`}>
+                        <h4 className="mt-3 text-sm font-bold truncate">
+                          {item.title}
+                        </h4>
+                        <p
+                          className={`text-xs font-semibold ${dark ? "text-blue-400" : "text-blue-600"}`}
+                        >
                           {item.recruiter?.companyName || "Partner Company"}
                         </p>
-                        <div className={`mt-2 flex flex-wrap gap-2 text-[11px] ${dark ? "text-slate-400" : "text-slate-500"}`}>
+                        <div
+                          className={`mt-2 flex flex-wrap gap-2 text-[11px] ${dark ? "text-slate-400" : "text-slate-500"}`}
+                        >
                           <span className="flex items-center gap-1">
                             <MapPin size={12} /> {item.location}
                           </span>
@@ -372,12 +427,30 @@ export default function StudentDashboard() {
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => setSelectedInternship(item)}
-                        className="w-full py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-sm"
-                      >
-                        Apply Now
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setSelectedInternship(item)}
+                          className="flex-1 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-sm cursor-pointer"
+                        >
+                          Apply Now
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => toggleSave(item.id)}
+                          title={isSaved(item.id) ? "Remove from saved jobs" : "Save job"}
+                          className={`p-2 rounded-xl border transition-all flex items-center justify-center cursor-pointer ${
+                            isSaved(item.id)
+                              ? "bg-blue-500/20 border-blue-500/40 text-blue-400"
+                              : dark
+                              ? "bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-white hover:bg-slate-800"
+                              : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
+                          }`}
+                        >
+                          <Bookmark size={15} className={isSaved(item.id) ? "fill-blue-400 text-blue-400" : ""} />
+                        </button>
+                      </div>
+
                     </div>
                   ))}
                 </div>
@@ -401,7 +474,8 @@ export default function StudentDashboard() {
 
               {applications.length === 0 ? (
                 <div className="py-6 text-center text-xs text-slate-500">
-                  No submitted applications. Select an opportunity above to apply!
+                  No submitted applications. Select an opportunity above to
+                  apply!
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -409,7 +483,9 @@ export default function StudentDashboard() {
                     <div
                       key={app.id}
                       className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 ${
-                        dark ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-100"
+                        dark
+                          ? "bg-slate-800/40 border-slate-700/50"
+                          : "bg-white border-slate-100"
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -417,9 +493,15 @@ export default function StudentDashboard() {
                           <FileText size={18} />
                         </div>
                         <div>
-                          <p className="text-xs font-bold">{app.internship?.title || "Internship Role"}</p>
-                          <p className={`text-[11px] ${dark ? "text-slate-400" : "text-slate-500"}`}>
-                            {app.internship?.recruiter?.companyName || "Company"} • Applied on{" "}
+                          <p className="text-xs font-bold">
+                            {app.internship?.title || "Internship Role"}
+                          </p>
+                          <p
+                            className={`text-[11px] ${dark ? "text-slate-400" : "text-slate-500"}`}
+                          >
+                            {app.internship?.recruiter?.companyName ||
+                              "Company"}{" "}
+                            • Applied on{" "}
                             {new Date(app.createdAt).toLocaleDateString()}
                           </p>
                         </div>
@@ -429,10 +511,10 @@ export default function StudentDashboard() {
                           app.status === "ACCEPTED"
                             ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
                             : app.status === "REJECTED"
-                            ? "bg-red-500/15 text-red-400 border border-red-500/30"
-                            : app.status === "WITHDRAWN"
-                            ? "bg-slate-500/15 text-slate-400 border border-slate-500/30"
-                            : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                              ? "bg-red-500/15 text-red-400 border border-red-500/30"
+                              : app.status === "WITHDRAWN"
+                                ? "bg-slate-500/15 text-slate-400 border border-slate-500/30"
+                                : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
                         }`}
                       >
                         {app.status}
@@ -457,24 +539,48 @@ export default function StudentDashboard() {
                   Coming Soon
                 </span>
               </div>
-              <p className={`text-xs mb-4 ${dark ? "text-slate-400" : "text-slate-500"}`}>
-                Automated matching engine analyzing student profile against employer requirements.
+              <p
+                className={`text-xs mb-4 ${dark ? "text-slate-400" : "text-slate-500"}`}
+              >
+                Automated matching engine analyzing student profile against
+                employer requirements.
               </p>
 
               <div className="space-y-3">
                 {[
-                  { label: "Technical Skills Alignment", pct: 85, color: "bg-blue-500" },
-                  { label: "Academic Performance (GPA)", pct: 75, color: "bg-blue-500" },
-                  { label: "Project Portfolio Relevance", pct: 60, color: "bg-blue-500" },
-                  { label: "Experience & Coursework", pct: 50, color: "bg-amber-500" },
+                  {
+                    label: "Technical Skills Alignment",
+                    pct: 85,
+                    color: "bg-blue-500",
+                  },
+                  {
+                    label: "Academic Performance (GPA)",
+                    pct: 75,
+                    color: "bg-blue-500",
+                  },
+                  {
+                    label: "Project Portfolio Relevance",
+                    pct: 60,
+                    color: "bg-blue-500",
+                  },
+                  {
+                    label: "Experience & Coursework",
+                    pct: 50,
+                    color: "bg-amber-500",
+                  },
                 ].map((item) => (
                   <div key={item.label}>
                     <div className="flex justify-between text-[11px] font-semibold mb-1">
                       <span>{item.label}</span>
                       <span className="text-slate-400">{item.pct}%</span>
                     </div>
-                    <div className={`h-2 rounded-full overflow-hidden ${dark ? "bg-slate-800" : "bg-slate-200"}`}>
-                      <div className={`h-full ${item.color} rounded-full`} style={{ width: `${item.pct}%` }} />
+                    <div
+                      className={`h-2 rounded-full overflow-hidden ${dark ? "bg-slate-800" : "bg-slate-200"}`}
+                    >
+                      <div
+                        className={`h-full ${item.color} rounded-full`}
+                        style={{ width: `${item.pct}%` }}
+                      />
                     </div>
                   </div>
                 ))}
@@ -489,11 +595,16 @@ export default function StudentDashboard() {
                 </div>
                 <div>
                   <h4 className="text-sm font-bold">AI Career Assistant</h4>
-                  <span className="text-[10px] font-bold text-blue-400">Coming Soon in Next Phase</span>
+                  <span className="text-[10px] font-bold text-blue-400">
+                    Coming Soon in Next Phase
+                  </span>
                 </div>
               </div>
-              <p className={`text-xs leading-relaxed ${dark ? "text-slate-400" : "text-slate-600"}`}>
-                Get instant resume optimization tips, mock interview questions, and tailored skill progression paths powered by AI.
+              <p
+                className={`text-xs leading-relaxed ${dark ? "text-slate-400" : "text-slate-600"}`}
+              >
+                Get instant resume optimization tips, mock interview questions,
+                and tailored skill progression paths powered by AI.
               </p>
             </Card>
           </div>
@@ -505,12 +616,19 @@ export default function StudentDashboard() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
           <div
             className={`w-full max-w-lg p-6 rounded-3xl border shadow-2xl ${
-              dark ? "bg-slate-900 border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"
+              dark
+                ? "bg-slate-900 border-slate-800 text-white"
+                : "bg-white border-slate-200 text-slate-900"
             }`}
           >
-            <h3 className="text-lg font-bold">Apply to {selectedInternship.title}</h3>
-            <p className={`text-xs mt-1 ${dark ? "text-slate-400" : "text-slate-600"}`}>
-              Company: {selectedInternship.recruiter?.companyName || "Partner Employer"}
+            <h3 className="text-lg font-bold">
+              Apply to {selectedInternship.title}
+            </h3>
+            <p
+              className={`text-xs mt-1 ${dark ? "text-slate-400" : "text-slate-600"}`}
+            >
+              Company:{" "}
+              {selectedInternship.recruiter?.companyName || "Partner Employer"}
             </p>
 
             {applySuccess ? (
@@ -520,14 +638,18 @@ export default function StudentDashboard() {
             ) : (
               <form onSubmit={handleApply} className="mt-4 space-y-4">
                 <div>
-                  <label className="block text-xs font-bold mb-1">Cover Letter (Optional)</label>
+                  <label className="block text-xs font-bold mb-1">
+                    Cover Letter (Optional)
+                  </label>
                   <textarea
                     rows={4}
                     value={coverLetter}
                     onChange={(e) => setCoverLetter(e.target.value)}
                     placeholder="Introduce yourself and explain why you're a great fit for this internship..."
                     className={`w-full p-3 rounded-2xl text-xs border outline-none ${
-                      dark ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200"
+                      dark
+                        ? "bg-slate-800 border-slate-700 text-white"
+                        : "bg-slate-50 border-slate-200"
                     }`}
                   />
                 </div>

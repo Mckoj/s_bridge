@@ -10,8 +10,10 @@ const internshipRoutes = require('./routes/internshipRoute');
 const reportRoutes = require('./routes/reportRoute');
 const notificationRoutes = require('./routes/notificationRoute');
 const universityRoutes = require('./routes/universityRoute');
+const conversationRoutes = require('./routes/conversationRoute');
 
 const app = express();
+
 
 // Middleware
 app.use(cors());
@@ -45,6 +47,8 @@ app.use('/api/internships', internshipRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/universities', universityRoutes);
+app.use('/api/conversations', conversationRoutes);
+
 
 // Health check
 app.get('/api/health', (req, res) => {

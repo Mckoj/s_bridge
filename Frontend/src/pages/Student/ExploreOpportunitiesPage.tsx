@@ -19,7 +19,10 @@ import {
   AlertCircle,
   TrendingUp,
   Filter,
+  Bookmark,
 } from "lucide-react";
+import { useSavedJobs } from "../../hooks/useSavedJobs";
+
 
 interface InternshipItem {
   id: string;
@@ -50,7 +53,8 @@ function useTheme() {
 function getMatchColor(score: number) {
   if (score >= 80) return "text-blue-400 bg-blue-500/10 border-blue-500/20";
   if (score >= 50) return "text-amber-400 bg-amber-500/10 border-amber-500/20";
-  if (score >= 25) return "text-orange-400 bg-orange-500/10 border-orange-500/20";
+  if (score >= 25)
+    return "text-orange-400 bg-orange-500/10 border-orange-500/20";
   return "text-slate-400 bg-slate-500/10 border-slate-500/20";
 }
 
@@ -64,7 +68,9 @@ function getMatchLabel(score: number) {
 export default function ExploreOpportunitiesPage() {
   const dark = useTheme();
   const navigate = useNavigate();
+  const { isSaved, toggleSave } = useSavedJobs();
   const [internships, setInternships] = useState<InternshipItem[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
@@ -85,7 +91,9 @@ export default function ExploreOpportunitiesPage() {
 
   const fetchInternships = async () => {
     // Show stale data instantly — only block with spinner on true first load
-    const stale = queryCache.get<{ internships: InternshipItem[] }>(INTERNSHIPS_CACHE_KEY);
+    const stale = queryCache.get<{ internships: InternshipItem[] }>(
+      INTERNSHIPS_CACHE_KEY,
+    );
     if (stale?.internships) {
       setInternships(stale.internships);
       setLoading(false);
@@ -125,7 +133,9 @@ export default function ExploreOpportunitiesPage() {
         setApplySuccess(null);
       }, 1500);
     } catch (err: any) {
-      setApplyError(err.response?.data?.error || "Failed to submit application.");
+      setApplyError(
+        err.response?.data?.error || "Failed to submit application.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -134,7 +144,8 @@ export default function ExploreOpportunitiesPage() {
   // Filters
   const filtered = internships
     .filter((item) => {
-      if (typeFilter !== "ALL" && item.internshipType !== typeFilter) return false;
+      if (typeFilter !== "ALL" && item.internshipType !== typeFilter)
+        return false;
       if (!search.trim()) return true;
       const q = search.toLowerCase();
       return (
@@ -145,11 +156,14 @@ export default function ExploreOpportunitiesPage() {
       );
     })
     .sort((a, b) => {
-      if (sortBy === "matchScore") return (b.matchScore ?? 0) - (a.matchScore ?? 0);
+      if (sortBy === "matchScore")
+        return (b.matchScore ?? 0) - (a.matchScore ?? 0);
       return 0; // default order from API (newest first)
     });
 
-  const internshipTypes = [...new Set(internships.map((i) => i.internshipType))];
+  const internshipTypes = [
+    ...new Set(internships.map((i) => i.internshipType)),
+  ];
 
   return (
     <DashboardLayout>
@@ -180,7 +194,8 @@ export default function ExploreOpportunitiesPage() {
                   dark ? "text-slate-400" : "text-slate-500"
                 }`}
               >
-                Discover available placements matched to your skill profile. Higher match scores mean better alignment with your abilities.
+                Discover available placements matched to your skill profile.
+                Higher match scores mean better alignment with your abilities.
               </p>
             </div>
 
@@ -225,8 +240,8 @@ export default function ExploreOpportunitiesPage() {
                     typeFilter === type
                       ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
                       : dark
-                      ? "bg-slate-800/60 text-slate-400 hover:text-white hover:bg-slate-800"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        ? "bg-slate-800/60 text-slate-400 hover:text-white hover:bg-slate-800"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                   }`}
                 >
                   {type === "ALL" ? "All Types" : type}
@@ -234,13 +249,15 @@ export default function ExploreOpportunitiesPage() {
               ))}
               <span className="mx-1 text-slate-700">|</span>
               <button
-                onClick={() => setSortBy(sortBy === "matchScore" ? "recent" : "matchScore")}
+                onClick={() =>
+                  setSortBy(sortBy === "matchScore" ? "recent" : "matchScore")
+                }
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
                   sortBy === "matchScore"
                     ? "bg-blue-600/20 text-blue-400 border border-blue-500/30"
                     : dark
-                    ? "bg-slate-800/60 text-slate-400 hover:text-white"
-                    : "bg-slate-100 text-slate-600"
+                      ? "bg-slate-800/60 text-slate-400 hover:text-white"
+                      : "bg-slate-100 text-slate-600"
                 }`}
               >
                 <TrendingUp size={12} />
@@ -266,11 +283,16 @@ export default function ExploreOpportunitiesPage() {
             <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 mb-4">
               <Briefcase size={32} />
             </div>
-            <h3 className={`text-lg font-bold ${dark ? "text-white" : "text-slate-800"}`}>
+            <h3
+              className={`text-lg font-bold ${dark ? "text-white" : "text-slate-800"}`}
+            >
               No opportunities found
             </h3>
-            <p className={`text-xs max-w-sm mt-1 ${dark ? "text-slate-400" : "text-slate-500"}`}>
-              No internship listings match your current filters. Try broadening your search.
+            <p
+              className={`text-xs max-w-sm mt-1 ${dark ? "text-slate-400" : "text-slate-500"}`}
+            >
+              No internship listings match your current filters. Try broadening
+              your search.
             </p>
           </div>
         ) : (
@@ -291,14 +313,16 @@ export default function ExploreOpportunitiesPage() {
                       <h3 className="text-sm font-bold text-blue-400 leading-tight truncate">
                         {item.title}
                       </h3>
-                      <p className={`text-xs font-semibold mt-0.5 ${dark ? "text-white" : "text-slate-800"}`}>
+                      <p
+                        className={`text-xs font-semibold mt-0.5 ${dark ? "text-white" : "text-slate-800"}`}
+                      >
                         {item.recruiter?.companyName}
                       </p>
                     </div>
                     {item.matchScore !== undefined && (
                       <span
                         className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold border whitespace-nowrap shrink-0 ${getMatchColor(
-                          item.matchScore
+                          item.matchScore,
                         )}`}
                       >
                         <TrendingUp size={10} />
@@ -309,16 +333,22 @@ export default function ExploreOpportunitiesPage() {
 
                   {/* Match Label */}
                   {item.matchScore !== undefined && item.matchScore > 0 && (
-                    <p className={`text-[10px] font-semibold mb-2 ${
-                      item.matchScore >= 80 ? "text-blue-400" :
-                      item.matchScore >= 50 ? "text-amber-400" :
-                      "text-orange-400"
-                    }`}>
+                    <p
+                      className={`text-[10px] font-semibold mb-2 ${
+                        item.matchScore >= 80
+                          ? "text-blue-400"
+                          : item.matchScore >= 50
+                            ? "text-amber-400"
+                            : "text-orange-400"
+                      }`}
+                    >
                       {getMatchLabel(item.matchScore)}
                     </p>
                   )}
 
-                  <p className={`text-xs line-clamp-2 my-2 ${dark ? "text-slate-400" : "text-slate-600"}`}>
+                  <p
+                    className={`text-xs line-clamp-2 my-2 ${dark ? "text-slate-400" : "text-slate-600"}`}
+                  >
                     {item.description}
                   </p>
 
@@ -349,18 +379,37 @@ export default function ExploreOpportunitiesPage() {
                   )}
                 </div>
 
-                <button
-                  onClick={() => {
-                    setApplyTarget(item);
-                    setCoverLetter("");
-                    setApplySuccess(null);
-                    setApplyError(null);
-                  }}
-                  className="w-full mt-2 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Plus size={14} />
-                  <span>Quick Apply</span>
-                </button>
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setApplyTarget(item);
+                      setCoverLetter("");
+                      setApplySuccess(null);
+                      setApplyError(null);
+                    }}
+                    className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Plus size={14} />
+                    <span>Quick Apply</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => toggleSave(item.id)}
+                    title={isSaved(item.id) ? "Remove from saved jobs" : "Save job"}
+                    className={`px-3 py-2 rounded-xl border font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      isSaved(item.id)
+                        ? "bg-blue-500/20 border-blue-500/40 text-blue-400"
+                        : dark
+                        ? "bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-white hover:bg-slate-800"
+                        : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
+                    }`}
+                  >
+                    <Bookmark size={14} className={isSaved(item.id) ? "fill-blue-400 text-blue-400" : ""} />
+                    <span>{isSaved(item.id) ? "Saved" : "Save"}</span>
+                  </button>
+                </div>
+
               </div>
             ))}
           </div>
@@ -371,7 +420,9 @@ export default function ExploreOpportunitiesPage() {
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
             <div
               className={`w-full max-w-md rounded-[28px] border p-6 shadow-2xl relative ${
-                dark ? "bg-slate-900 border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"
+                dark
+                  ? "bg-slate-900 border-slate-800 text-white"
+                  : "bg-white border-slate-200 text-slate-900"
               }`}
             >
               <button
@@ -388,15 +439,19 @@ export default function ExploreOpportunitiesPage() {
 
               {applyTarget.matchScore !== undefined && (
                 <div className="mt-2 mb-3">
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${getMatchColor(applyTarget.matchScore)}`}>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${getMatchColor(applyTarget.matchScore)}`}
+                  >
                     <TrendingUp size={12} />
-                    {applyTarget.matchScore}% Match — {getMatchLabel(applyTarget.matchScore)}
+                    {applyTarget.matchScore}% Match —{" "}
+                    {getMatchLabel(applyTarget.matchScore)}
                   </span>
                 </div>
               )}
 
               <p className="text-xs text-slate-400 mt-1 mb-4">
-                Submit your application details to {applyTarget.recruiter?.companyName}.
+                Submit your application details to{" "}
+                {applyTarget.recruiter?.companyName}.
               </p>
 
               {applySuccess && (

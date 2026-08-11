@@ -1,13 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useDashboard } from "../../context/DashboardContext";
-import {
-  Search,
-  Building,
-  MapPin,
-  Calendar,
-  Briefcase,
-} from "lucide-react";
+import { Search, Building, MapPin, Calendar, Briefcase } from "lucide-react";
 import { getInternships } from "../../services/internshipService";
 import type { InternshipItem } from "../../services/internshipService";
 import { classifyApiError } from "../../utils/apiErrors";
@@ -52,7 +46,7 @@ export default function UniversityInternshipsPage() {
       (item) =>
         item.title.toLowerCase().includes(q) ||
         (item.recruiter?.companyName ?? "").toLowerCase().includes(q) ||
-        item.location.toLowerCase().includes(q)
+        item.location.toLowerCase().includes(q),
     );
   }, [internships, search]);
 
@@ -96,7 +90,9 @@ export default function UniversityInternshipsPage() {
           <EmptyState
             icon={<Briefcase size={28} />}
             title={
-              search ? "No Matching Internship Postings" : "No Internship Postings"
+              search
+                ? "No Matching Internship Postings"
+                : "No Internship Postings"
             }
             description={
               search
@@ -166,9 +162,7 @@ export default function UniversityInternshipsPage() {
                       />
                       <span>
                         {item.location}{" "}
-                        {item.internshipType
-                          ? `(${item.internshipType})`
-                          : ""}
+                        {item.internshipType ? `(${item.internshipType})` : ""}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -177,9 +171,7 @@ export default function UniversityInternshipsPage() {
                         className="text-violet-400"
                         aria-hidden="true"
                       />
-                      <span>
-                        Duration: {item.duration ?? "Not specified"}
-                      </span>
+                      <span>Duration: {item.duration ?? "Not specified"}</span>
                     </div>
                   </div>
                 </div>
