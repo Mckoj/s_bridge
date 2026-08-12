@@ -400,11 +400,11 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* System Alerts */}
+          {/* System Alerts & Security Audit */}
           <div className={`rounded-2xl border p-6 shadow-xs ${panelClass}`}>
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-              <h2 className={`text-base font-bold ${headingText}`}>System Alerts</h2>
-              <button onClick={() => navigate("/admin/dashboard/reports")} className="text-xs font-bold text-purple-600 dark:text-purple-400">View All</button>
+              <h2 className={`text-base font-bold ${headingText}`}>System Alerts & Audit</h2>
+              <button onClick={() => navigate("/admin/dashboard/audit-logs")} className="text-xs font-bold text-purple-600 dark:text-purple-400">System Audit Trail →</button>
             </div>
             <div className="mt-4 space-y-3">
               <div className="flex items-start gap-3 rounded-xl bg-slate-50/70 p-3 dark:bg-slate-800/50">
@@ -412,6 +412,13 @@ export default function AdminDashboard() {
                 <div>
                   <p className={`text-xs font-bold ${headingText}`}>High number of pending reports</p>
                   <p className={`text-[11px] ${mutedText} mt-0.5`}>There are {pendingReports.length} reports awaiting review.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-xl bg-slate-50/70 p-3 dark:bg-slate-800/50">
+                <Building2 size={16} className="text-rose-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className={`text-xs font-bold ${headingText}`}>System Audit Trail Status</p>
+                  <p className={`text-[11px] ${mutedText} mt-0.5`}>Backend audit endpoint required. <Link to="/admin/dashboard/audit-logs" className="text-purple-600 dark:text-purple-400 font-semibold hover:underline">View System Audit Trail</Link></p>
                 </div>
               </div>
             </div>

@@ -14,6 +14,10 @@
 // Admin-specific
 export { default as StatCard } from "./StatCard";
 export { default as PageHeader } from "./PageHeader";
+export { default as AuditSummaryCard } from "./AuditSummaryCard";
+export { default as AuditFilters } from "./AuditFilters";
+export { default as AuditEventTable } from "./AuditEventTable";
+export { default as AuditEventDetailDialog } from "./AuditEventDetailDialog";
 
 // Shared state components — same across all portals
 export { default as LoadingSkeleton } from "../student/LoadingSkeleton";

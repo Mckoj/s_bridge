@@ -3,7 +3,7 @@ import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../context/AuthContext";
 import { useDashboard } from "../../context/DashboardContext";
 import { PageHeader, LoadingSkeleton, ErrorState } from "../../components/admin";
-import { Settings, Shield, Lock, Save, CheckCircle2, UserPlus, UserCheck, FileText, Bell, AlertTriangle } from "lucide-react";
+import { Settings, Shield, Save, CheckCircle2, UserPlus, UserCheck, FileText, AlertTriangle } from "lucide-react";
 import { getAdminSettings, updateAdminSettings, type SystemSettingsMap } from "../../services/adminService";
 import type { ClassifiedApiError } from "../../utils/apiErrors";
 
