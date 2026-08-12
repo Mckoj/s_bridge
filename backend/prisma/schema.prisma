@@ -47,11 +47,12 @@ model User {
   passwordHash            String
   role                    Role                      @default(STUDENT)
   isVerified              Boolean                   @default(false)
+  universityId            String?
+  university              University?               @relation(fields: [universityId], references: [id], onDelete: SetNull)
   createdAt               DateTime                  @default(now())
   updatedAt               DateTime                  @updatedAt
   student                 Student?
   recruiter               Recruiter?
-  university              University?
   notifications           Notification[]
   emailVerificationTokens EmailVerificationToken[]
   passwordResetTokens     PasswordResetToken[]
@@ -60,6 +61,7 @@ model User {
   sentMessages            Message[]
 
   @@index([email])
+  @@index([universityId])
 }
 
 
@@ -108,17 +110,15 @@ model Recruiter {
 
 model University {
   id             String         @id @default(uuid())
-  userId         String         @unique
-  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   universityName String
   domain         String         @unique
   contactEmail   String?
+  isVerified     Boolean        @default(true)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+  users          User[]
   students       Student[]
   announcements  Announcement[]
-
-  @@index([userId])
 }
 
 model CompanyProfile {
@@ -332,4 +332,10 @@ model Message {
 
   @@index([conversationId])
   @@index([senderId])
+}
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }

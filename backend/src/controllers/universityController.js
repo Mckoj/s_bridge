@@ -6,7 +6,7 @@ const prisma = require('../config/db');
  */
 async function getUniversityStats(req, res) {
   try {
-    const universityId = req.user.university?.id;
+    const universityId = req.user.universityId || req.user.university?.id;
     const studentWhere = universityId ? { universityId } : {};
 
     const totalStudents = await prisma.student.count({ where: studentWhere });
@@ -106,8 +106,8 @@ async function approveRecruiter(req, res) {
 
 async function createAnnouncement(req, res) {
   try {
-    const university = req.user.university;
-    if (!university && req.user.role !== 'ADMIN') {
+    let uniId = req.user.universityId || req.user.university?.id;
+    if (!uniId && req.user.role !== 'ADMIN') {
       return res.status(403).json({ error: 'Only university liaisons can publish announcements' });
     }
 
@@ -116,7 +116,6 @@ async function createAnnouncement(req, res) {
       return res.status(400).json({ error: 'Title and content are required' });
     }
 
-    let uniId = university?.id;
     if (!uniId && req.user.role === 'ADMIN') {
       const firstUni = await prisma.university.findFirst();
       uniId = firstUni?.id;
@@ -154,7 +153,7 @@ async function createAnnouncement(req, res) {
 
 async function getUniversityAnnouncements(req, res) {
   try {
-    const universityId = req.user.university?.id;
+    const universityId = req.user.universityId || req.user.university?.id;
 
     const announcements = await prisma.announcement.findMany({
       where: universityId ? { universityId } : {},
@@ -180,7 +179,7 @@ async function getUniversityAnnouncements(req, res) {
 
 async function getUniversityAnalytics(req, res) {
   try {
-    const universityId = req.user.university?.id;
+    const universityId = req.user.universityId || req.user.university?.id;
     const studentWhere = universityId ? { universityId } : {};
 
     const students = await prisma.student.findMany({

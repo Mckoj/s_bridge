@@ -454,3 +454,40 @@ export async function updateAdminReportStatus(
     throw classifyApiError(err);
   }
 }
+
+export interface SystemSettingsMap {
+  registrationOpen: string;
+  autoApproveRecruiters: string;
+  requireCvUpload: string;
+  maxApplicationsPerStudent: string;
+  emailNotifications: string;
+  systemMaintenance: string;
+  [key: string]: string;
+}
+
+const SETTINGS_CACHE_KEY = "GET:/api/admin/settings";
+
+/** Fetch System Settings for Admin */
+export async function getAdminSettings(): Promise<SystemSettingsMap> {
+  try {
+    const res = await api.get("/api/admin/settings");
+    const settings = res.data?.settings || {};
+    queryCache.set(SETTINGS_CACHE_KEY, settings, TTL.SHORT);
+    return settings;
+  } catch (err: unknown) {
+    throw classifyApiError(err);
+  }
+}
+
+/** Save System Settings (Admin) */
+export async function updateAdminSettings(settings: Partial<SystemSettingsMap>): Promise<SystemSettingsMap> {
+  try {
+    const res = await api.put("/api/admin/settings", settings);
+    const updated = res.data?.settings || {};
+    queryCache.invalidate(SETTINGS_CACHE_KEY);
+    return updated;
+  } catch (err: unknown) {
+    throw classifyApiError(err);
+  }
+}
+
