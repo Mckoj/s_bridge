@@ -60,9 +60,21 @@ async function getReports(req, res) {
     let whereClause = {};
 
     if (role === 'STUDENT') {
-      whereClause.studentId = req.user.student?.id;
-    } else if (studentId) {
-      whereClause.studentId = studentId;
+      whereClause.studentId = req.user.student?.id || 'none';
+    } else if (role === 'RECRUITER' && req.user.recruiter?.id) {
+      whereClause.internship = { recruiterId: req.user.recruiter.id };
+      if (studentId) whereClause.studentId = studentId;
+    } else if (role === 'UNIVERSITY') {
+      const universityId = req.user.universityId || req.user.university?.id;
+      if (!universityId) {
+        return res.status(403).json({ error: 'University context missing' });
+      }
+      whereClause.student = { universityId };
+      if (studentId) whereClause.studentId = studentId;
+    } else if (role === 'ADMIN') {
+      if (studentId) whereClause.studentId = studentId;
+    } else {
+      return res.status(403).json({ error: 'Access denied: insufficient permissions' });
     }
 
     if (status) {
@@ -105,9 +117,19 @@ async function getReports(req, res) {
 async function getReportById(req, res) {
   try {
     const { id } = req.params;
+    const { role } = req.user;
 
-    const report = await prisma.report.findUnique({
-      where: { id },
+    let where = { id };
+    if (role === 'UNIVERSITY') {
+      const universityId = req.user.universityId || req.user.university?.id;
+      if (!universityId) {
+        return res.status(403).json({ error: 'University context missing' });
+      }
+      where.student = { universityId };
+    }
+
+    const report = await prisma.report.findFirst({
+      where,
       include: {
         student: true,
         internship: {
@@ -131,13 +153,23 @@ async function updateReportStatus(req, res) {
   try {
     const { id } = req.params;
     const { status, comment } = req.body;
+    const { role } = req.user;
 
     if (!['APPROVED', 'REJECTED', 'PENDING'].includes(status)) {
       return res.status(400).json({ error: 'Invalid report status' });
     }
 
-    const report = await prisma.report.findUnique({
-      where: { id },
+    let where = { id };
+    if (role === 'UNIVERSITY') {
+      const universityId = req.user.universityId || req.user.university?.id;
+      if (!universityId) {
+        return res.status(403).json({ error: 'University context missing' });
+      }
+      where.student = { universityId };
+    }
+
+    const report = await prisma.report.findFirst({
+      where,
       include: { student: true }
     });
 

@@ -11,8 +11,10 @@ const reportRoutes = require('./routes/reportRoute');
 const notificationRoutes = require('./routes/notificationRoute');
 const universityRoutes = require('./routes/universityRoute');
 const conversationRoutes = require('./routes/conversationRoute');
+const adminRoutes = require('./routes/adminRoute');
 
 const app = express();
+
 
 
 // Middleware
@@ -48,6 +50,8 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/universities', universityRoutes);
 app.use('/api/conversations', conversationRoutes);
+app.use('/api/admin', adminRoutes);
+
 
 
 // Health check

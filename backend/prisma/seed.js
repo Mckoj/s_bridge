@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import pkg from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import pg from 'pg';
@@ -165,21 +168,22 @@ async function main() {
   ];
 
   for (const school of SCHOOLS) {
-    const universityUser = await prisma.user.create({
+    const university = await prisma.university.create({
       data: {
-        email: school.email,
-        passwordHash,
-        role: 'UNIVERSITY',
+        universityName: school.name,
+        domain: school.domain,
+        contactEmail: school.email,
         isVerified: true
       }
     });
 
-    await prisma.university.create({
+    await prisma.user.create({
       data: {
-        userId: universityUser.id,
-        universityName: school.name,
-        domain: school.domain,
-        contactEmail: school.email
+        email: school.email,
+        passwordHash,
+        role: 'UNIVERSITY',
+        isVerified: true,
+        universityId: university.id
       }
     });
   }
