@@ -3,7 +3,16 @@ const { uploadToCloudinary } = require('../utils/cloudinary');
 
 async function getAllStudents(req, res) {
   try {
+    let whereClause = {};
+    if (req.user && req.user.role === 'UNIVERSITY') {
+      const universityId = req.user.universityId || req.user.university?.id;
+      if (universityId) {
+        whereClause.universityId = universityId;
+      }
+    }
+
     const students = await prisma.student.findMany({
+      where: whereClause,
       include: {
         skills: {
           include: { skill: true }
@@ -53,11 +62,12 @@ async function getStudentById(req, res) {
       return res.status(404).json({ error: 'Student not found' });
     }
 
-    // Role-based access validation (IDOR Prevention)
+    // Role-based access validation (IDOR Prevention & Multi-Tenant Scoping)
     const { role } = req.user;
+    const userUniId = req.user.universityId || req.user.university?.id;
     const isSelf = req.user.student?.id === student.id || req.user.id === student.userId;
     const isAdmin = role === 'ADMIN';
-    const isUniversity = role === 'UNIVERSITY';
+    const isUniversity = role === 'UNIVERSITY' && userUniId && student.universityId === userUniId;
 
     let isAuthorizedRecruiter = false;
     if (role === 'RECRUITER' && req.user.recruiter?.id) {

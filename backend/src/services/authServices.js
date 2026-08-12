@@ -4,18 +4,44 @@ const prisma = require('../config/db');
 const { sendVerificationEmail } = require('../utils/email');
 
 const register = async (email, password, role, profileData = {}) => {
+    if (!email || !password) {
+        throw new Error('Email and password are required');
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
     const existingUser = await prisma.user.findUnique({
-        where: { email }
+        where: { email: normalizedEmail }
     });
 
     if (existingUser) {
         throw new Error('User already exists');
     }
 
-    const { firstName, lastName, studentId, indexNumber, companyName, universityName, domain } = profileData;
+    const { firstName, lastName, studentId, indexNumber, companyName } = profileData;
 
-    // Validate role-specific fields
-    if (role === 'STUDENT') {
+    let universityId = null;
+
+    if (role === 'UNIVERSITY') {
+        const domain = normalizedEmail.split('@')[1];
+        if (!domain) {
+            throw new Error('Invalid email address');
+        }
+
+        const university = await prisma.university.findUnique({
+            where: { domain: domain.toLowerCase() }
+        });
+
+        if (!university) {
+            throw new Error('Invalid institutional domain');
+        }
+
+        if (!university.isVerified) {
+            throw new Error('University is not currently approved');
+        }
+
+        universityId = university.id;
+    } else if (role === 'STUDENT') {
         if (!firstName || !lastName) {
             throw new Error('First name and last name are required for student registration');
         }
@@ -31,36 +57,37 @@ const register = async (email, password, role, profileData = {}) => {
                 throw new Error('Index number is already registered');
             }
         }
+
+        const domain = normalizedEmail.split('@')[1];
+        if (domain) {
+            const university = await prisma.university.findUnique({
+                where: { domain: domain.toLowerCase() }
+            });
+            if (university && university.isVerified) {
+                universityId = university.id;
+            }
+        }
     } else if (role === 'RECRUITER') {
         if (!companyName) {
             throw new Error('Company name is required for recruiter registration');
-        }
-    } else if (role === 'UNIVERSITY') {
-        if (!universityName || !domain) {
-            throw new Error('University name and domain are required for university registration');
-        }
-        const existingDomain = await prisma.university.findUnique({ where: { domain } });
-        if (existingDomain) {
-            throw new Error('University domain is already registered');
         }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate verification token and 6-digit OTP
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    // Combine token and OTP with a colon delimiter for storage
     const storedToken = `${verificationToken}:${otpCode}`;
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     const result = await prisma.$transaction(async (tx) => {
         const newUser = await tx.user.create({
             data: {
-                email,
+                email: normalizedEmail,
                 passwordHash: hashedPassword,
                 role: role || "STUDENT",
-                isVerified: false
+                isVerified: false,
+                universityId
             }
         });
 
@@ -69,6 +96,7 @@ const register = async (email, password, role, profileData = {}) => {
             profile = await tx.student.create({
                 data: {
                     userId: newUser.id,
+                    universityId,
                     firstName,
                     lastName,
                     studentId: studentId || null,
@@ -83,17 +111,8 @@ const register = async (email, password, role, profileData = {}) => {
                     isApproved: false
                 }
             });
-        } else if (role === 'UNIVERSITY') {
-            profile = await tx.university.create({
-                data: {
-                    userId: newUser.id,
-                    universityName,
-                    domain
-                }
-            });
         }
 
-        // Save email verification token record
         await tx.emailVerificationToken.create({
             data: {
                 userId: newUser.id,
@@ -107,14 +126,14 @@ const register = async (email, password, role, profileData = {}) => {
             id: newUser.id,
             email: newUser.email,
             role: newUser.role,
+            universityId: newUser.universityId,
             isVerified: newUser.isVerified,
             createdAt: newUser.createdAt,
             profile
         };
     });
 
-    // Dispatch verification email (non-blocking)
-    sendVerificationEmail(email, verificationToken, otpCode).catch((err) => {
+    sendVerificationEmail(normalizedEmail, verificationToken, otpCode).catch((err) => {
         console.error('Failed to send verification email:', err);
     });
 
