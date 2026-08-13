@@ -1,4 +1,5 @@
 const prisma = require('../config/db');
+const { createAuditLog } = require('../services/auditService');
 
 async function createInternship(req, res) {
   try {
@@ -67,6 +68,15 @@ async function createInternship(req, res) {
     });
 
     res.status(201).json({ success: true, internship });
+
+    createAuditLog({
+      req,
+      action: 'INTERNSHIP_CREATED',
+      category: 'INTERNSHIP_MANAGEMENT',
+      target: 'Internship',
+      targetId: internship.id,
+      description: `Internship posted: "${internship.title}" by ${recruiter.companyName}`
+    });
   } catch (error) {
     console.error('Error creating internship:', error);
     res.status(500).json({ error: 'Failed to create internship listing' });
@@ -264,6 +274,16 @@ async function updateInternship(req, res) {
     });
 
     res.json({ success: true, internship: updated });
+
+    createAuditLog({
+      req,
+      action: 'INTERNSHIP_UPDATED',
+      category: 'INTERNSHIP_MANAGEMENT',
+      target: 'Internship',
+      targetId: id,
+      description: `Internship updated: "${updated.title}"`,
+      metadata: { status: updated.status }
+    });
   } catch (error) {
     console.error('Error updating internship:', error);
     res.status(500).json({ error: 'Failed to update internship listing' });
@@ -283,6 +303,15 @@ async function deleteInternship(req, res) {
     }
 
     await prisma.internship.delete({ where: { id } });
+
+    createAuditLog({
+      req,
+      action: 'INTERNSHIP_DELETED',
+      category: 'INTERNSHIP_MANAGEMENT',
+      target: 'Internship',
+      targetId: id,
+      description: `Internship deleted: "${existing.title}"`
+    });
 
     res.json({ success: true, message: 'Internship listing deleted successfully' });
   } catch (error) {

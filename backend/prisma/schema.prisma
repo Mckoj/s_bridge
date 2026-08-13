@@ -59,6 +59,7 @@ model User {
   sentConversations       Conversation[]           @relation("SentConversations")
   receivedConversations   Conversation[]           @relation("ReceivedConversations")
   sentMessages            Message[]
+  auditLogs               AuditLog[]
 
   @@index([email])
   @@index([universityId])
@@ -339,3 +340,24 @@ model SystemSetting {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  actorId        String?
+  actor          User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action         String
+  category       String
+  target         String?
+  targetId       String?
+  description    String?  @db.Text
+  metadata       Json?
+  ipAddress      String?
+  userAgent      String?
+  timestamp      DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  @@index([timestamp])
+  @@index([category])
+  @@index([action])
+  @@index([actorId])
+}

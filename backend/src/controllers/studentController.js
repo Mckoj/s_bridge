@@ -1,5 +1,6 @@
 const prisma = require('../config/db');
 const { uploadToCloudinary } = require('../utils/cloudinary');
+const { createAuditLog } = require('../services/auditService');
 
 async function getAllStudents(req, res) {
   try {
@@ -184,8 +185,18 @@ async function deleteStudent(req, res) {
       return res.status(404).json({ error: 'Student profile not found' });
     }
 
+    const studentName = `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.studentId;
     await prisma.user.delete({
       where: { id: student.userId }
+    });
+
+    createAuditLog({
+      req,
+      action: 'STUDENT_DELETED',
+      category: 'USER_MANAGEMENT',
+      target: 'Student',
+      targetId: student.id,
+      description: `Student account deleted: ${studentName}`
     });
 
     res.json({ success: true, message: 'Student account deleted successfully' });

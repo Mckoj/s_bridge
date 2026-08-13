@@ -1,4 +1,5 @@
 const prisma = require('../config/db');
+const { createAuditLog } = require('../services/auditService');
 
 async function submitReport(req, res) {
   try {
@@ -193,6 +194,16 @@ async function updateReportStatus(req, res) {
         message: `Your report "${report.title}" was ${status.toLowerCase()}.${comment ? ` Comment: ${comment}` : ''}`,
         type: 'REPORT'
       }
+    });
+
+    createAuditLog({
+      req,
+      action: 'REPORT_STATUS_CHANGED',
+      category: 'REPORT_MANAGEMENT',
+      target: 'Report',
+      targetId: id,
+      description: `Report "${report.title}" status changed from ${report.status} to ${status}`,
+      metadata: { previousStatus: report.status, newStatus: status, comment: comment || null }
     });
 
     res.json({ success: true, report: updatedReport });
