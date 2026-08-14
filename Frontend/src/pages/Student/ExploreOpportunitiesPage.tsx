@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useDashboard } from "../../context/DashboardContext";
+const RichTextEditor = lazy(() => import("../../components/shared/RichTextEditor"));
 import api from "../../services/api";
 import { queryCache } from "../../utils/queryCache";
 import { useNavigate } from "react-router-dom";
@@ -473,17 +474,14 @@ export default function ExploreOpportunitiesPage() {
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                     Cover Letter / Statement of Interest
                   </label>
-                  <textarea
-                    rows={4}
-                    placeholder="Briefly describe why you are a great fit for this internship..."
-                    value={coverLetter}
-                    onChange={(e) => setCoverLetter(e.target.value)}
-                    className={`w-full p-3 text-xs rounded-xl border outline-none transition-all ${
-                      dark
-                        ? "bg-slate-950 border-slate-800 text-white focus:border-blue-500"
-                        : "bg-slate-50 border-slate-200 text-slate-800 focus:border-blue-500"
-                    }`}
-                  />
+                  <Suspense fallback={<div className={`rounded-xl border h-28 flex items-center justify-center text-xs text-slate-400 ${dark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"}`}>Loading editor...</div>}>
+                    <RichTextEditor
+                      value={coverLetter}
+                      onChange={setCoverLetter}
+                      placeholder="Briefly describe why you are a great fit for this internship..."
+                      minHeight={120}
+                    />
+                  </Suspense>
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">

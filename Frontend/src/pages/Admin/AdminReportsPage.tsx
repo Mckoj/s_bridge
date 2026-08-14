@@ -3,7 +3,8 @@ import DashboardLayout from "../../layouts/DashboardLayout";
 import { useDashboard } from "../../context/DashboardContext";
 import { useAdminReports } from "../../hooks/useAdminReports";
 import { PageHeader, LoadingSkeleton, EmptyState, ErrorState, StatusBadge } from "../../components/admin";
-import { FileText, Search, CheckCircle, XCircle, ExternalLink } from "lucide-react";
+import { FileText, Search, CheckCircle, XCircle, ExternalLink, Download, FileSpreadsheet, ChevronDown, Loader2 } from "lucide-react";
+import { exportToCSV, exportToExcel, exportToPDF } from "../../utils/exportData";
 
 export default function AdminReportsPage() {
   const { theme } = useDashboard();
@@ -11,6 +12,26 @@ export default function AdminReportsPage() {
 
   const [search, setSearch] = useState("");
   const { reports, loading, error, updateStatus, updatingId, refetch } = useAdminReports();
+  const [exporting, setExporting] = useState<"pdf"|"excel"|"csv"|null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+
+  const buildExportRows = () => filtered.map((r) => ({
+    Student: r.studentName, Title: r.title, Internship: r.internshipTitle,
+    Status: r.status, "File URL": r.fileUrl ?? "",
+  })) as Record<string, unknown>[];
+  const exportHeaders = ["Student", "Title", "Internship", "Status", "File URL"];
+  const exportKeys = ["Student", "Title", "Internship", "Status", "File URL"];
+
+  const handleExport = async (type: "pdf"|"excel"|"csv") => {
+    setExporting(type); setExportOpen(false);
+    try {
+      const ts = new Date().toISOString().split("T")[0];
+      const rows = buildExportRows();
+      if (type === "csv") exportToCSV(rows, exportHeaders, exportKeys, `logbook-reports-${ts}.csv`);
+      else if (type === "excel") await exportToExcel(rows, exportHeaders, exportKeys, "Logbook Reports", `logbook-reports-${ts}.xlsx`);
+      else await exportToPDF(rows, exportHeaders, exportKeys, "Internship Logbook Reports", `logbook-reports-${ts}.pdf`);
+    } finally { setExporting(null); }
+  };
 
   const filtered = useMemo(() => {
     const query = search.toLowerCase();
@@ -25,7 +46,30 @@ export default function AdminReportsPage() {
   return (
     <DashboardLayout>
       <div className="mx-auto max-w-7xl space-y-6 pb-12">
-        <PageHeader badge="Compliance & Logbooks" title="Internship Logbook Reports" description="Audit weekly logbooks and resolve the reports that still need moderator attention." />
+        <PageHeader badge="Compliance & Logbooks" title="Internship Logbook Reports" description="Audit weekly logbooks and resolve the reports that still need moderator attention.">
+          {/* Export Dropdown */}
+          <div className="relative">
+            <button onClick={() => setExportOpen(v => !v)} disabled={!filtered.length || !!exporting}
+              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                filtered.length ? "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20" : "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
+              }`}>
+              {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+              Export <ChevronDown size={12} className={`transition-transform ${exportOpen ? "rotate-180" : ""}`} />
+            </button>
+            {exportOpen && !!filtered.length && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setExportOpen(false)} />
+                <div className="absolute right-0 mt-2 z-50 w-44 rounded-2xl border bg-white dark:bg-slate-900 dark:border-slate-700 shadow-2xl overflow-hidden">
+                  <div className="p-1 space-y-0.5">
+                    <button onClick={() => handleExport("pdf")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 cursor-pointer"><FileText size={14} className="text-rose-500" /> Download PDF</button>
+                    <button onClick={() => handleExport("excel")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:text-emerald-600 cursor-pointer"><FileSpreadsheet size={14} className="text-emerald-500" /> Download Excel</button>
+                    <button onClick={() => handleExport("csv")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:text-blue-600 cursor-pointer"><FileText size={14} className="text-blue-500" /> Download CSV</button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </PageHeader>
 
         <div className={`flex items-center gap-3 rounded-2xl border p-4 ${dark ? "border-slate-800 bg-slate-900/80" : "border-slate-200 bg-white"}`}>
           <Search size={18} className="shrink-0 text-slate-400" aria-hidden="true" />

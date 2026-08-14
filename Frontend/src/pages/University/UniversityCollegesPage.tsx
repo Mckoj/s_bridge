@@ -1,9 +1,8 @@
+import { useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useDashboard } from "../../context/DashboardContext";
-import {
-  Sparkles,
-  Download
-} from "lucide-react";
+import { Sparkles, Download, Loader2 } from "lucide-react";
+import { exportToPDF } from "../../utils/exportData";
 
 function useTheme() {
   return useDashboard().theme === "dark";
@@ -11,6 +10,21 @@ function useTheme() {
 
 export default function UniversityCollegesPage() {
   const dark = useTheme();
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const rows = colleges.map((c) => ({
+        Rank: c.rank, College: c.name,
+        "Placement Rate": c.placementRate,
+        Departments: c.departmentsCount,
+        Students: c.studentsCount, Placed: c.placedCount,
+      })) as Record<string, unknown>[];
+      const ts = new Date().toISOString().split("T")[0];
+      await exportToPDF(rows, ["Rank","College","Placement Rate","Departments","Students","Placed"], ["Rank","College","Placement Rate","Departments","Students","Placed"], "College Accreditation Comparison Report", `college-report-${ts}.pdf`);
+    } finally { setExporting(false); }
+  };
 
   const colleges = [
     {
@@ -74,10 +88,12 @@ export default function UniversityCollegesPage() {
             </div>
 
             <button
-              onClick={() => alert("Exporting College Accreditation Comparison...")}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs shadow-lg shadow-violet-500/20"
+              onClick={handleExport}
+              disabled={exporting}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs shadow-lg shadow-violet-500/20 transition-all cursor-pointer disabled:opacity-60"
             >
-              <Download size={15} /> Export Accreditation Report
+              {exporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+              Export Accreditation Report
             </button>
           </div>
         </div>

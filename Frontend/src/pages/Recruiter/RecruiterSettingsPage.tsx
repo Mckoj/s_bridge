@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useDashboard } from "../../context/DashboardContext";
 import {
@@ -8,6 +8,7 @@ import {
   type RecruiterProfile,
 } from "../../services/recruiterService";
 import { PageHeader, LoadingSkeleton, ErrorState } from "../../components/recruiter";
+const RichTextEditor = lazy(() => import("../../components/shared/RichTextEditor"));
 import { Building, Upload, Save, CheckCircle2 } from "lucide-react";
 
 export default function RecruiterSettingsPage() {
@@ -228,15 +229,14 @@ export default function RecruiterSettingsPage() {
 
               <div>
                 <label className="block text-xs font-bold mb-1">Company Overview / Description</label>
-                <textarea
-                  rows={4}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Briefly describe your company's mission and internship opportunities..."
-                  className={`w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none ${
-                    dark ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500" : "bg-slate-50 border-slate-200 text-slate-800"
-                  }`}
-                />
+                <Suspense fallback={<div className={`rounded-xl border h-28 flex items-center justify-center text-xs text-slate-400 ${dark ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>Loading editor...</div>}>
+                  <RichTextEditor
+                    value={description}
+                    onChange={setDescription}
+                    placeholder="Briefly describe your company's mission and internship opportunities..."
+                    minHeight={120}
+                  />
+                </Suspense>
               </div>
             </div>
 
