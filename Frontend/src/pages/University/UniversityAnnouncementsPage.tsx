@@ -1,21 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, Suspense, lazy } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useDashboard } from "../../context/DashboardContext";
-import {
-  Bell,
-  Send,
-  CheckCircle2,
-  Calendar,
-  Tag,
-} from "lucide-react";
+import { Bell, Send, CheckCircle2, Calendar, Tag } from "lucide-react";
 import { useUniversityAnnouncements } from "../../hooks/useUniversityAnnouncements";
 import type { UniversityAnnouncement } from "../../services/universityService";
-import {
-  LoadingSkeleton,
-  EmptyState,
-  ErrorState,
-} from "../../components/university";
+import { LoadingSkeleton, EmptyState, ErrorState } from "../../components/university";
 import PageHeader from "../../components/university/PageHeader";
+
+const RichTextEditor = lazy(() => import("../../components/shared/RichTextEditor"));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Announcement Card
@@ -219,17 +211,16 @@ function CreateAnnouncementForm({
           <label htmlFor="ann-content" className="block font-bold mb-1">
             Message Content <span aria-hidden="true">*</span>
           </label>
-          <textarea
-            id="ann-content"
-            rows={4}
-            placeholder="Type full broadcast details…"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            required
-            maxLength={2000}
-            aria-required="true"
-            className={inputClass}
-          />
+          <Suspense fallback={
+            <div className={`rounded-xl border h-36 flex items-center justify-center text-xs text-slate-400 ${dark ? "bg-slate-950/60 border-slate-800" : "bg-slate-50 border-slate-200"}`}>Loading editor...</div>
+          }>
+            <RichTextEditor
+              value={content}
+              onChange={setContent}
+              placeholder="Type full broadcast details…"
+              minHeight={140}
+            />
+          </Suspense>
         </div>
 
         <button

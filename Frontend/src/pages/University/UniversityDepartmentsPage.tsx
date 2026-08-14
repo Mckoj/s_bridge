@@ -1,10 +1,8 @@
+import { useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useDashboard } from "../../context/DashboardContext";
-import {
-  ClipboardList,
-  Sparkles,
-  Download
-} from "lucide-react";
+import { ClipboardList, Sparkles, Download, Loader2 } from "lucide-react";
+import { exportToPDF, exportToCSV } from "../../utils/exportData";
 
 function useTheme() {
   return useDashboard().theme === "dark";
@@ -12,6 +10,25 @@ function useTheme() {
 
 export default function UniversityDepartmentsPage() {
   const dark = useTheme();
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const rows = departments.map((d) => ({
+        Department: d.name,
+        "Total Students": d.totalStudents,
+        Placed: d.placed,
+        Pending: d.pending,
+        "Placement Rate": d.placementRate,
+        "Avg CGPA": d.avgCgpa,
+        "Top Companies": d.topCompanies,
+        "Top Skills": d.topSkills,
+      })) as Record<string, unknown>[];
+      const ts = new Date().toISOString().split("T")[0];
+      await exportToPDF(rows, ["Department","Total Students","Placed","Pending","Placement Rate","Avg CGPA"], ["Department","Total Students","Placed","Pending","Placement Rate","Avg CGPA"], "Department Performance Summary", `department-report-${ts}.pdf`);
+    } finally { setExporting(false); }
+  };
 
   const departments = [
     {
@@ -87,10 +104,12 @@ export default function UniversityDepartmentsPage() {
             </div>
 
             <button
-              onClick={() => alert("Downloading Department Performance Summary...")}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs shadow-lg shadow-violet-500/20"
+              onClick={handleExport}
+              disabled={exporting}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs shadow-lg shadow-violet-500/20 transition-all cursor-pointer disabled:opacity-60"
             >
-              <Download size={15} /> Export Department Reports
+              {exporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+              Export Department Reports
             </button>
           </div>
         </div>

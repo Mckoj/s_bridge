@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
+const RichTextEditor = lazy(() => import("../../components/shared/RichTextEditor"));
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../context/AuthContext";
 import { useDashboard } from "../../context/DashboardContext";
@@ -641,17 +642,14 @@ export default function StudentDashboard() {
                   <label className="block text-xs font-bold mb-1">
                     Cover Letter (Optional)
                   </label>
-                  <textarea
-                    rows={4}
-                    value={coverLetter}
-                    onChange={(e) => setCoverLetter(e.target.value)}
-                    placeholder="Introduce yourself and explain why you're a great fit for this internship..."
-                    className={`w-full p-3 rounded-2xl text-xs border outline-none ${
-                      dark
-                        ? "bg-slate-800 border-slate-700 text-white"
-                        : "bg-slate-50 border-slate-200"
-                    }`}
-                  />
+                  <Suspense fallback={<div className={`rounded-xl border h-28 flex items-center justify-center text-xs text-slate-400 ${dark ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>Loading editor...</div>}>
+                    <RichTextEditor
+                      value={coverLetter}
+                      onChange={setCoverLetter}
+                      placeholder="Introduce yourself and explain why you're a great fit for this internship..."
+                      minHeight={120}
+                    />
+                  </Suspense>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2">
