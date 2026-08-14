@@ -10,4 +10,7 @@ router.put('/settings', authenticate, authorizeRoles('ADMIN'), adminController.u
 // System Audit Trail Endpoint (Admin only)
 router.get('/audit-logs', authenticate, authorizeRoles('ADMIN'), adminController.getAuditLogs);
 
+// System Analytics Endpoint (Admin only)
+router.get('/analytics', authenticate, authorizeRoles('ADMIN'), adminController.getAdminAnalytics);
+
 module.exports = router;

@@ -56,7 +56,11 @@ async function submitReport(req, res) {
 async function getReports(req, res) {
   try {
     const { role } = req.user;
-    const { status, studentId } = req.query;
+    const { page, limit, status, studentId } = req.query;
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const skip = (pageNum - 1) * limitNum;
+    const take = limitNum;
 
     let whereClause = {};
 
@@ -82,33 +86,49 @@ async function getReports(req, res) {
       whereClause.status = status;
     }
 
-    const reports = await prisma.report.findMany({
-      where: whereClause,
-      include: {
-        student: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            studentId: true,
-            programme: true,
-            profilePicUrl: true
-          }
-        },
-        internship: {
-          select: {
-            id: true,
-            title: true,
-            recruiter: {
-              select: { companyName: true }
+    const [total, reports] = await Promise.all([
+      prisma.report.count({ where: whereClause }),
+      prisma.report.findMany({
+        where: whereClause,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          student: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              studentId: true,
+              programme: true,
+              profilePicUrl: true
+            }
+          },
+          internship: {
+            select: {
+              id: true,
+              title: true,
+              recruiter: {
+                select: { companyName: true }
+              }
             }
           }
         }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+      })
+    ]);
 
-    res.json({ success: true, reports });
+    const totalPages = Math.ceil(total / limitNum);
+
+    res.json({
+      success: true,
+      reports,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages
+      }
+    });
   } catch (error) {
     console.error('Error fetching reports:', error);
     res.status(500).json({ error: 'Failed to fetch reports' });

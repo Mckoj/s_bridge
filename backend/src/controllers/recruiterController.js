@@ -3,15 +3,58 @@ const { uploadToCloudinary } = require('../utils/cloudinary');
 
 async function getAllRecruiters(req, res) {
   try {
-    const recruiters = await prisma.recruiter.findMany({
-      include: {
-        companyProfile: true,
-        user: {
-          select: { email: true, isVerified: true }
+    const { page, limit, search, status } = req.query;
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const skip = (pageNum - 1) * limitNum;
+    const take = limitNum;
+
+    let whereClause = {};
+
+    if (status === 'pending') {
+      whereClause.isApproved = false;
+    } else if (status === 'approved') {
+      whereClause.isApproved = true;
+    }
+
+    if (search && typeof search === 'string' && search.trim()) {
+      const term = search.trim();
+      whereClause.OR = [
+        { companyName: { contains: term, mode: 'insensitive' } },
+        { position: { contains: term, mode: 'insensitive' } },
+        { companyWebsite: { contains: term, mode: 'insensitive' } },
+        { user: { email: { contains: term, mode: 'insensitive' } } }
+      ];
+    }
+
+    const [total, recruiters] = await Promise.all([
+      prisma.recruiter.count({ where: whereClause }),
+      prisma.recruiter.findMany({
+        where: whereClause,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          companyProfile: true,
+          user: {
+            select: { email: true, isVerified: true }
+          }
         }
+      })
+    ]);
+
+    const totalPages = Math.ceil(total / limitNum);
+
+    res.json({
+      success: true,
+      recruiters,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages
       }
     });
-    res.json({ success: true, recruiters });
   } catch (error) {
     console.error('Error fetching recruiters:', error);
     res.status(500).json({ error: 'Failed to fetch recruiters list' });

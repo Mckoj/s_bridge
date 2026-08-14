@@ -1,11 +1,11 @@
 const nodemailer = require('nodemailer');
 
-// Create transport dynamically based on environment variables or console fallback
+// Create transport dynamically based on Mailgun or standard SMTP environment variables
 function createTransporter() {
-  const host = process.env.SMTP_HOST;
+  const host = process.env.MAILGUN_SMTP_SERVER || process.env.SMTP_HOST;
   const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const user = process.env.MAILGUN_LOGIN || process.env.SMTP_USER;
+  const pass = process.env.MAILGUN_PASSWORD || process.env.SMTP_PASS;
 
   if (host && user && pass) {
     return nodemailer.createTransport({
@@ -27,7 +27,7 @@ async function sendVerificationEmail(email, token, otp) {
   const subject = 'S-Bridge — Verify Your Account';
   const textContent = `Welcome to S-Bridge!\n\nPlease verify your account by clicking the link below or entering your OTP code:\n\nVerification Link: ${verificationLink}\nVerification OTP: ${otp}\n\nThis verification code expires in 24 hours.`;
   const htmlContent = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded-radius: 12px;">
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
       <h2 style="color: #2563eb;">Welcome to S-Bridge!</h2>
       <p style="color: #475569; font-size: 14px;">Please confirm your email address to activate your attachment & internship portal account.</p>
       

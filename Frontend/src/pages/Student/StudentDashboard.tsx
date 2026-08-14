@@ -361,10 +361,10 @@ export default function StudentDashboard() {
                 <div>
                   <h3 className="text-base font-bold flex items-center gap-2">
                     <Sparkles size={18} className="text-blue-500" />
-                    AI Recommended Opportunities
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                    Recommended Opportunities
+                    {/* <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-blue-500/20 text-blue-400 border border-blue-500/30">
                       AI Feature • Coming Soon
-                    </span>
+                    </span> */}
                   </h3>
                   <p
                     className={`text-xs ${dark ? "text-slate-400" : "text-slate-500"}`}
@@ -533,11 +533,11 @@ export default function StudentDashboard() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-bold flex items-center gap-2">
                   <Bot size={18} className="text-blue-500" />
-                  AI Match Score Breakdown
+                  Match Score Breakdown
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                {/* <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-blue-500/20 text-blue-400 border border-blue-500/30">
                   Coming Soon
-                </span>
+                </span> */}
               </div>
               <p
                 className={`text-xs mb-4 ${dark ? "text-slate-400" : "text-slate-500"}`}
@@ -588,7 +588,7 @@ export default function StudentDashboard() {
             </Card>
 
             {/* AI Career Assistant Feature Teaser */}
-            <Card className="p-6 border-blue-500/30 bg-gradient-to-br from-blue-900/30 to-slate-900/80">
+            {/* <Card className="p-6 border-blue-500/30 bg-gradient-to-br from-blue-900/30 to-slate-900/80">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
                   <Sparkles size={20} />
@@ -606,7 +606,7 @@ export default function StudentDashboard() {
                 Get instant resume optimization tips, mock interview questions,
                 and tailored skill progression paths powered by AI.
               </p>
-            </Card>
+            </Card> */}
           </div>
         </div>
       </div>

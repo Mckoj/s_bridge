@@ -82,8 +82,68 @@ async function updateSystemSettings(req, res) {
   }
 }
 
+async function getAdminAnalytics(req, res) {
+  try {
+    const [
+      totalUsers,
+      studentsCount,
+      recruitersCount,
+      universitiesCount,
+      adminsCount,
+      totalInternships,
+      openInternships,
+      totalApplications,
+      acceptedPlacements,
+      totalReports,
+      pendingRecruiters
+    ] = await Promise.all([
+      prisma.user.count(),
+      prisma.user.count({ where: { role: 'STUDENT' } }),
+      prisma.user.count({ where: { role: 'RECRUITER' } }),
+      prisma.user.count({ where: { role: 'UNIVERSITY' } }),
+      prisma.user.count({ where: { role: 'ADMIN' } }),
+      prisma.internship.count(),
+      prisma.internship.count({ where: { status: 'OPEN' } }),
+      prisma.application.count(),
+      prisma.application.count({ where: { status: 'ACCEPTED' } }),
+      prisma.report.count(),
+      prisma.recruiter.count({ where: { isApproved: false } })
+    ]);
+
+    const placementRate = studentsCount > 0
+      ? Number(((acceptedPlacements / studentsCount) * 100).toFixed(1))
+      : 0;
+
+    res.json({
+      success: true,
+      analytics: {
+        userMetrics: {
+          totalUsers,
+          students: studentsCount,
+          recruiters: recruitersCount,
+          universities: universitiesCount,
+          admins: adminsCount,
+          pendingRecruiters
+        },
+        platformActivity: {
+          totalInternships,
+          openInternships,
+          totalApplications,
+          acceptedPlacements,
+          placementRate,
+          submittedReports: totalReports
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching admin analytics:', error);
+    res.status(500).json({ error: 'Failed to fetch admin analytics' });
+  }
+}
+
 module.exports = {
   getSystemSettings,
   updateSystemSettings,
-  getAuditLogs
+  getAuditLogs,
+  getAdminAnalytics
 };
