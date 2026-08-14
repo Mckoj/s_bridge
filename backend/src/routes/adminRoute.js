@@ -7,4 +7,7 @@ const { authenticate, authorizeRoles } = require('../middleware/auth');
 router.get('/settings', authenticate, authorizeRoles('ADMIN'), adminController.getSystemSettings);
 router.put('/settings', authenticate, authorizeRoles('ADMIN'), adminController.updateSystemSettings);
 
+// System Audit Trail Endpoint (Admin only)
+router.get('/audit-logs', authenticate, authorizeRoles('ADMIN'), adminController.getAuditLogs);
+
 module.exports = router;

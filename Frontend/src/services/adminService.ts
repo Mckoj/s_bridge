@@ -104,6 +104,24 @@ export interface BackendAdminReport {
   } | null;
 }
 
+export interface BackendAdminAuditEvent {
+  id: string;
+  timestamp: string;
+  actorId?: string | null;
+  actorName?: string | null;
+  actorEmail?: string | null;
+  actorRole?: string | null;
+  action: string;
+  category: string;
+  targetResource?: string | null;
+  targetId?: string | null;
+  status?: "SUCCESS" | "FAILED" | string | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  details?: string | null;
+  metadata?: Record<string, unknown> | null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // RUNTIME TYPE GUARDS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -126,6 +144,16 @@ export function isBackendAdminApplicationArray(data: unknown): data is BackendAd
 
 export function isBackendAdminReportArray(data: unknown): data is BackendAdminReport[] {
   return Array.isArray(data);
+}
+
+export function isBackendAdminAuditEvent(data: unknown): data is BackendAdminAuditEvent {
+  if (!data || typeof data !== "object") return false;
+  const d = data as Record<string, unknown>;
+  return typeof d.id === "string" && typeof d.action === "string" && typeof d.timestamp === "string";
+}
+
+export function isBackendAdminAuditEventArray(data: unknown): data is BackendAdminAuditEvent[] {
+  return Array.isArray(data) && data.every(isBackendAdminAuditEvent);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -231,6 +259,31 @@ export interface AdminReport {
   createdAt: string;
 }
 
+export interface AdminAuditEvent {
+  id: string;
+  timestamp: string;
+  actorName: string;
+  actorRole?: string;
+  action: string;
+  category: string;
+  target?: string;
+  status?: "SUCCESS" | "FAILED";
+  ipAddress?: string;
+  userAgent?: string;
+  details?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface AdminAuditFilterParams {
+  query?: string;
+  category?: string;
+  action?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // MAPPERS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -306,6 +359,23 @@ export function mapBackendAdminReport(dto: BackendAdminReport): AdminReport {
   };
 }
 
+export function mapBackendAdminAuditEvent(dto: BackendAdminAuditEvent): AdminAuditEvent {
+  return {
+    id: dto.id,
+    timestamp: dto.timestamp,
+    actorName: dto.actorName || dto.actorEmail || "System Administrator",
+    actorRole: dto.actorRole ?? undefined,
+    action: dto.action,
+    category: (dto.category || "SYSTEM").toUpperCase(),
+    target: dto.targetResource ?? undefined,
+    status: dto.status === "FAILED" ? "FAILED" : dto.status === "SUCCESS" ? "SUCCESS" : undefined,
+    ipAddress: dto.ipAddress ?? undefined,
+    userAgent: dto.userAgent ?? undefined,
+    details: dto.details ?? undefined,
+    metadata: dto.metadata ?? undefined,
+  };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SERVICE FUNCTIONS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -316,6 +386,24 @@ const INTERNSHIPS_CACHE_KEY = "GET:/api/internships";
 const APPLICATIONS_CACHE_KEY = "GET:/api/applications";
 const REPORTS_CACHE_KEY = "GET:/api/reports";
 const UNIVERSITY_STATS_CACHE_KEY = "GET:/api/universities/stats:admin";
+const AUDIT_LOGS_CACHE_KEY = "GET:/api/admin/audit-logs";
+
+/**
+ * Fetch System Audit Logs for Admin.
+ * When backend endpoint is unavailable (HTTP 404/501), classifyApiError sets isEndpointUnavailable.
+ */
+export async function getAdminAuditLogs(params?: AdminAuditFilterParams): Promise<AdminAuditEvent[]> {
+  try {
+    const res = await api.get("/api/admin/audit-logs", { params });
+    const raw = res.data?.auditLogs || res.data?.logs || res.data;
+    if (!isBackendAdminAuditEventArray(raw)) return [];
+    const mapped = raw.map(mapBackendAdminAuditEvent);
+    queryCache.set(AUDIT_LOGS_CACHE_KEY, mapped, TTL.SHORT);
+    return mapped;
+  } catch (err: unknown) {
+    throw classifyApiError(err);
+  }
+}
 
 /**
  * Fetch aggregated statistics from the university stats endpoint.

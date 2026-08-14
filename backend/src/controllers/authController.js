@@ -4,6 +4,7 @@ const prisma = require('../config/db');
 const authService = require('../services/authServices');
 const crypto = require('crypto');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../utils/email');
+const { createAuditLog } = require('../services/auditService');
 
 const register = async (req, res) => {
     try {
@@ -43,6 +44,15 @@ const login = async (req, res) => {
 
         const isMatch = await bcrypt.compare(password, user.passwordHash);
         if (!isMatch) {
+            createAuditLog({
+                req,
+                actorId: user.id,
+                action: 'LOGIN_FAILED',
+                category: 'SECURITY',
+                target: 'User',
+                targetId: user.id,
+                description: `Failed login attempt for ${cleanEmail}`
+            });
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
@@ -51,6 +61,16 @@ const login = async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
         );
+
+        createAuditLog({
+            req,
+            actorId: user.id,
+            action: 'LOGIN_SUCCESS',
+            category: 'AUTHENTICATION',
+            target: 'User',
+            targetId: user.id,
+            description: `User logged in successfully as ${user.role}`
+        });
 
         res.json({
             message: 'Login successful',
@@ -236,6 +256,16 @@ const resetPassword = async (req, res) => {
 
         await prisma.passwordResetToken.deleteMany({ where: { userId: tokenRecord.userId } });
 
+        createAuditLog({
+            req,
+            actorId: tokenRecord.userId,
+            action: 'PASSWORD_RESET',
+            category: 'SECURITY',
+            target: 'User',
+            targetId: tokenRecord.userId,
+            description: 'User password was reset via OTP'
+        });
+
         res.json({ success: true, message: 'Password reset successfully. You can now log in with your new password.' });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -269,6 +299,16 @@ const changePassword = async (req, res) => {
         await prisma.user.update({
             where: { id: userId },
             data: { passwordHash: hashedPassword }
+        });
+
+        createAuditLog({
+            req,
+            actorId: userId,
+            action: 'PASSWORD_CHANGED',
+            category: 'SECURITY',
+            target: 'User',
+            targetId: userId,
+            description: 'User changed their account password'
         });
 
         res.json({ success: true, message: 'Password updated successfully' });

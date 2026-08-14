@@ -279,9 +279,78 @@ Presentation Pages (src/pages/Admin/)
 
 | Feature | Depends On | Notes |
 | :--- | :--- | :--- |
-| Audit Logs Page | `GET /api/admin/audit-logs` backend endpoint | Frontend page + hook already placeholder-ready |
+| Audit Logs Page | `GET /api/admin/audit-logs` backend endpoint | Frontend page + hook complete and ready for backend contract |
 | System Health Dashboard | `GET /api/admin/system-health` | Could show DB connection, queue status, etc. |
 | Platform Settings | `GET/PUT /api/admin/settings` | Global feature flags, maintenance mode toggle |
 | Admin Analytics | `GET /api/admin/analytics` | Cross-portal KPI trends; requires time-series data |
 | Admin Bulk Actions | Backend bulk delete endpoints | Delete multiple students/recruiters in one operation |
 | Admin Impersonation | Requires auth middleware changes | View portal as any user role for debugging |
+
+---
+
+## 13. System Audit Trail Specification & Roadmap
+
+### Current Backend Capability
+- Backend inspection of `backend/src/` routes, controllers, middleware, and `backend/prisma/schema.prisma` confirms:
+  - **No `AuditLog` Prisma model exists**.
+  - **No `auditController.js` or `auditService.js` exists**.
+  - **No `GET /api/admin/audit-logs` route exists**.
+- **Frontend Source-of-Truth Compliance (Case B):** The Admin Portal does **not** fabricate fake audit records, mock timestamps, or fake IP addresses. The UI displays an honest, polished **"System Audit Trail Unavailable / Backend Required"** state until a real backend endpoint is deployed.
+
+### Required Backend Roadmap & Schema Specification
+To activate live administrative activity logging, the backend must implement the following capability:
+
+1. **Prisma Model (`backend/prisma/schema.prisma`):**
+   ```prisma
+   model AuditLog {
+     id             String   @id @default(uuid())
+     timestamp      DateTime @default(now())
+     actorId        String?
+     actorName      String?
+     actorEmail     String?
+     actorRole      Role?
+     action         String
+     category       String   // e.g. ADMINISTRATIVE, SECURITY, PERMISSION, SYSTEM
+     targetResource String?
+     targetId       String?
+     status         String?  // SUCCESS, FAILED
+     ipAddress      String?
+     userAgent      String?
+     details        String?  @db.Text
+     metadata       Json?
+     createdAt      DateTime @default(now())
+
+     @@index([timestamp])
+     @@index([category])
+     @@index([actorId])
+   }
+   ```
+
+2. **Controller & Route (`GET /api/admin/audit-logs`):**
+   - Query filters: `query`, `category`, `startDate`, `endDate`, `page`, `limit`.
+   - Authorization: Restricted exclusively to `Role.ADMIN` (or `SUPER_ADMIN` if configured).
+   - Response DTO:
+     ```json
+     {
+       "success": true,
+       "auditLogs": [
+         {
+           "id": "uuid",
+           "timestamp": "2026-08-12T02:00:00.000Z",
+           "actorName": "System Admin",
+           "actorRole": "ADMIN",
+           "action": "RECRUITER_APPROVED",
+           "category": "RECRUITER_MANAGEMENT",
+           "targetResource": "Recruiter: Tech Corp",
+           "status": "SUCCESS",
+           "ipAddress": "192.168.1.1",
+           "userAgent": "Mozilla/5.0...",
+           "details": "Approved recruiter profile Tech Corp"
+         }
+       ]
+     }
+     ```
+
+3. **Frontend Integration:**
+   - The frontend architecture (`BackendAdminAuditEvent` DTO, `isBackendAdminAuditEvent` runtime guard, `mapBackendAdminAuditEvent` mapper, `useAdminAuditLogs` hook, and `AdminAuditLogsPage`) is already fully built and ready to ingest live backend audit records immediately upon deployment of the endpoint.
+

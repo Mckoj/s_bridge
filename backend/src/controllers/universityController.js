@@ -1,4 +1,5 @@
 const prisma = require('../config/db');
+const { createAuditLog } = require('../services/auditService');
 
 /**
  * Fetch aggregated statistics for the University Dashboard
@@ -93,6 +94,15 @@ async function approveRecruiter(req, res) {
       }
     });
 
+    createAuditLog({
+      req,
+      action: 'RECRUITER_APPROVED',
+      category: 'RECRUITER_MANAGEMENT',
+      target: 'Recruiter',
+      targetId: id,
+      description: `Recruiter approved: ${updatedRecruiter.companyName}`
+    });
+
     res.json({
       success: true,
       message: 'Recruiter approved successfully',
@@ -143,6 +153,15 @@ async function createAnnouncement(req, res) {
       status: 'PUBLISHED',
       publishedAt: announcement.createdAt.toISOString()
     };
+
+    createAuditLog({
+      req,
+      action: 'ANNOUNCEMENT_CREATED',
+      category: 'UNIVERSITY_MANAGEMENT',
+      target: 'Announcement',
+      targetId: announcement.id,
+      description: `University announcement published: "${announcement.title}" for ${announcement.targetAudience}`
+    });
 
     res.status(201).json({ success: true, announcement: formatted });
   } catch (error) {
