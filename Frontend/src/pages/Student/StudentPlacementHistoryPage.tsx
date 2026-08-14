@@ -1,12 +1,8 @@
+import { useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useDashboard } from "../../context/DashboardContext";
-import {
-  Briefcase,
-  Download,
-  Calendar,
-  Sparkles,
-  Star
-} from "lucide-react";
+import { Briefcase, Download, Calendar, Sparkles, Star, Loader2 } from "lucide-react";
+import { exportToPDF } from "../../utils/exportData";
 
 function useTheme() {
   return useDashboard().theme === "dark";
@@ -14,6 +10,23 @@ function useTheme() {
 
 export default function StudentPlacementHistoryPage() {
   const dark = useTheme();
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  const handleDownloadCertificate = async (item: typeof history[number]) => {
+    setDownloading(item.id);
+    try {
+      const rows = [
+        { Field: "Position", Value: item.position },
+        { Field: "Company", Value: item.companyName },
+        { Field: "Duration", Value: `${item.startDate} - ${item.endDate}` },
+        { Field: "Supervisor", Value: item.supervisor },
+        { Field: "Evaluation Score", Value: item.evaluationScore },
+      ] as Record<string, unknown>[];
+      await exportToPDF(rows, ["Field", "Value"], ["Field", "Value"],
+        `Internship Completion Certificate — ${item.companyName}`,
+        `certificate-${item.id}.pdf`);
+    } finally { setDownloading(null); }
+  };
 
   const history = [
     {
@@ -89,10 +102,11 @@ export default function StudentPlacementHistoryPage() {
               </div>
 
               <button
-                onClick={() => alert("Downloading Internship Completion Certificate...")}
-                className="px-5 py-2.5 rounded-2xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 flex items-center gap-2"
+                onClick={() => handleDownloadCertificate(item)}
+                disabled={downloading === item.id}
+                className="px-5 py-2.5 rounded-2xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 flex items-center gap-2 transition-all cursor-pointer disabled:opacity-60"
               >
-                <Download size={15} /> Certificate (PDF)
+                {downloading === item.id ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />} Certificate (PDF)
               </button>
             </div>
           ))}

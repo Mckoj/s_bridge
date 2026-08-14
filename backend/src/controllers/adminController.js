@@ -10,19 +10,36 @@ const DEFAULT_SETTINGS = {
   systemMaintenance: 'false'
 };
 
+// ─── Public Platform Stats (no auth — safe aggregated counts) ────────────────
+async function getPlatformStats(req, res) {
+  try {
+    const [activePlacements, verifiedEmployers, totalApplications, acceptedApplications] =
+      await Promise.all([
+        prisma.application.count({ where: { status: 'ACCEPTED' } }),
+        prisma.recruiter.count({ where: { isApproved: true } }),
+        prisma.application.count(),
+        prisma.application.count({ where: { status: 'ACCEPTED' } }),
+      ]);
+
+    const successRate =
+      totalApplications > 0
+        ? Math.round((acceptedApplications / totalApplications) * 100)
+        : 0;
+
+    res.json({ activePlacements, verifiedEmployers, successRate, totalApplications });
+  } catch (error) {
+    console.error('Error fetching platform stats:', error);
+    res.status(500).json({ error: 'Failed to fetch platform stats' });
+  }
+}
+
+// ─── Audit Logs ──────────────────────────────────────────────────────────────
 async function getAuditLogs(req, res) {
   try {
     const { page, limit, search, query, category, action, startDate, endDate, actorId } = req.query;
     const searchParam = query || search || '';
     const result = await fetchAuditLogs({
-      page,
-      limit,
-      search: searchParam,
-      category,
-      action,
-      startDate,
-      endDate,
-      actorId
+      page, limit, search: searchParam, category, action, startDate, endDate, actorId
     });
     res.json(result);
   } catch (error) {
@@ -31,15 +48,12 @@ async function getAuditLogs(req, res) {
   }
 }
 
+// ─── System Settings ─────────────────────────────────────────────────────────
 async function getSystemSettings(req, res) {
   try {
     const dbSettings = await prisma.systemSetting.findMany();
-    
     const settingsMap = { ...DEFAULT_SETTINGS };
-    dbSettings.forEach(s => {
-      settingsMap[s.key] = s.value;
-    });
-
+    dbSettings.forEach(s => { settingsMap[s.key] = s.value; });
     res.json({ success: true, settings: settingsMap });
   } catch (error) {
     console.error('Error fetching system settings:', error);
@@ -55,7 +69,6 @@ async function updateSystemSettings(req, res) {
     }
 
     const updatedMap = {};
-
     for (const [key, value] of Object.entries(settings)) {
       const strVal = String(value);
       const updated = await prisma.systemSetting.upsert({
@@ -81,6 +94,7 @@ async function updateSystemSettings(req, res) {
     res.status(500).json({ error: 'Failed to update system settings' });
   }
 }
+
 
 async function getAdminAnalytics(req, res) {
   try {
@@ -147,3 +161,5 @@ module.exports = {
   getAuditLogs,
   getAdminAnalytics
 };
+
+module.exports = { getPlatformStats, getSystemSettings, updateSystemSettings, getAuditLogs };
