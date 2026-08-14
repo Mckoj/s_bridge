@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const morgan = require('morgan');
 
 const authRoutes = require('./routes/authRoute');
@@ -13,12 +14,38 @@ const universityRoutes = require('./routes/universityRoute');
 const conversationRoutes = require('./routes/conversationRoute');
 const adminRoutes = require('./routes/adminRoute');
 
+const { authLimiter, apiLimiter } = require('./middleware/rateLimiter');
+
 const app = express();
 
+// Trust reverse proxy (Render, Vercel, Nginx, Cloudflare) for client IP detection
+app.set('trust proxy', 1);
+
+// ─── Security Headers (Helmet) ─────────────────────────────────────────────
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
 
-// Middleware
-app.use(cors());
+
+// ─── CORS Configuration ───────────────────────────────────────────────────────
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : ['http://localhost:5173', 'http://localhost:3000'];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, or server-to-server requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(morgan('dev'));
 app.use(express.json());
 
@@ -39,6 +66,10 @@ app.use((req, res, next) => {
   next();
 });
 
+
+// ─── Rate Limiting Middleware ──────────────────────────────────────────────────
+app.use('/api', apiLimiter);
+app.use('/api/auth', authLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);

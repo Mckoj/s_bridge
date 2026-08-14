@@ -103,6 +103,19 @@ async function approveRecruiter(req, res) {
       description: `Recruiter approved: ${updatedRecruiter.companyName}`
     });
 
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: recruiter.userId,
+          title: 'Account Approved',
+          message: `Your recruiter profile for "${updatedRecruiter.companyName}" has been approved! You can now publish internship listings.`,
+          type: 'SYSTEM'
+        }
+      });
+    } catch (notifErr) {
+      console.error('Error sending recruiter approval notification:', notifErr.message);
+    }
+
     res.json({
       success: true,
       message: 'Recruiter approved successfully',

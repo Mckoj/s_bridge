@@ -4,6 +4,12 @@ const { createAuditLog } = require('../services/auditService');
 
 async function getAllStudents(req, res) {
   try {
+    const { page, limit, search, programme } = req.query;
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const skip = (pageNum - 1) * limitNum;
+    const take = limitNum;
+
     let whereClause = {};
     if (req.user && req.user.role === 'UNIVERSITY') {
       const universityId = req.user.universityId || req.user.university?.id;
@@ -12,18 +18,51 @@ async function getAllStudents(req, res) {
       }
     }
 
-    const students = await prisma.student.findMany({
-      where: whereClause,
-      include: {
-        skills: {
-          include: { skill: true }
-        },
-        user: {
-          select: { email: true, isVerified: true }
+    if (programme) {
+      whereClause.programme = { contains: programme, mode: 'insensitive' };
+    }
+
+    if (search && typeof search === 'string' && search.trim()) {
+      const term = search.trim();
+      whereClause.OR = [
+        { firstName: { contains: term, mode: 'insensitive' } },
+        { lastName: { contains: term, mode: 'insensitive' } },
+        { studentId: { contains: term, mode: 'insensitive' } },
+        { programme: { contains: term, mode: 'insensitive' } },
+        { user: { email: { contains: term, mode: 'insensitive' } } }
+      ];
+    }
+
+    const [total, students] = await Promise.all([
+      prisma.student.count({ where: whereClause }),
+      prisma.student.findMany({
+        where: whereClause,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          skills: {
+            include: { skill: true }
+          },
+          user: {
+            select: { email: true, isVerified: true }
+          }
         }
+      })
+    ]);
+
+    const totalPages = Math.ceil(total / limitNum);
+
+    res.json({
+      success: true,
+      students,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages
       }
     });
-    res.json({ success: true, students });
   } catch (error) {
     console.error('Error fetching students:', error);
     res.status(500).json({ error: 'Failed to fetch students list' });

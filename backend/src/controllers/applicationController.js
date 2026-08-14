@@ -102,7 +102,21 @@ async function applyToInternship(req, res) {
 async function getApplications(req, res) {
   try {
     const { role } = req.user;
+    const { page, limit, status, sortBy } = req.query;
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const skip = (pageNum - 1) * limitNum;
+    const take = limitNum;
+
+    let whereClause = {};
+    let includeClause = {};
+    let orderBy = { createdAt: 'desc' };
+    let total = 0;
     let applications = [];
+
+    if (status) {
+      whereClause.status = status;
+    }
 
     if (role === 'STUDENT') {
       const studentId = req.user.student?.id;
@@ -110,80 +124,88 @@ async function getApplications(req, res) {
         return res.status(400).json({ error: 'Student profile not found' });
       }
 
-      applications = await prisma.application.findMany({
-        where: { studentId },
-        include: {
-          internship: {
-            include: {
-              recruiter: {
-                select: { companyName: true, companyWebsite: true }
-              }
+      whereClause.studentId = studentId;
+      includeClause = {
+        internship: {
+          include: {
+            recruiter: {
+              select: { companyName: true, companyWebsite: true }
             }
           }
-        },
-        orderBy: { createdAt: 'desc' }
-      });
+        }
+      };
     } else if (role === 'RECRUITER') {
       const recruiterId = req.user.recruiter?.id;
       if (!recruiterId) {
         return res.status(400).json({ error: 'Recruiter profile not found' });
       }
 
-      const sortBy = req.query.sortBy;
-      let orderBy = { createdAt: 'desc' };
+      whereClause.internship = { recruiterId };
+
       if (sortBy === 'matchScore') {
         orderBy = { matchScore: 'desc' };
       }
 
-      applications = await prisma.application.findMany({
-        where: {
-          internship: {
-            recruiterId
+      includeClause = {
+        student: {
+          include: {
+            skills: {
+              include: { skill: true }
+            },
+            user: {
+              select: { email: true }
+            }
           }
         },
-        include: {
-          student: {
-            include: {
-              skills: {
-                include: { skill: true }
-              },
-              user: {
-                select: { email: true }
-              }
-            }
-          },
-          internship: true
-        },
-        orderBy
-      });
+        internship: true
+      };
     } else if (role === 'UNIVERSITY' || role === 'ADMIN') {
-      applications = await prisma.application.findMany({
-        include: {
-          student: {
-            include: {
-              skills: {
-                include: { skill: true }
-              },
-              user: {
-                select: { email: true }
-              }
-            }
-          },
-          internship: {
-            include: {
-              recruiter: {
-                select: { companyName: true }
-              }
+      includeClause = {
+        student: {
+          include: {
+            skills: {
+              include: { skill: true }
+            },
+            user: {
+              select: { email: true }
             }
           }
         },
-        orderBy: { createdAt: 'desc' }
-      });
+        internship: {
+          include: {
+            recruiter: {
+              select: { companyName: true }
+            }
+          }
+        }
+      };
     } else {
       return res.status(403).json({ error: 'Access denied: unknown role' });
     }
 
-    res.json({ success: true, applications });
+    [total, applications] = await Promise.all([
+      prisma.application.count({ where: whereClause }),
+      prisma.application.findMany({
+        where: whereClause,
+        skip,
+        take,
+        include: includeClause,
+        orderBy
+      })
+    ]);
+
+    const totalPages = Math.ceil(total / limitNum);
+
+    res.json({
+      success: true,
+      applications,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages
+      }
+    });
   } catch (error) {
     console.error('Error fetching applications:', error);
     res.status(500).json({ error: 'Failed to retrieve applications' });
@@ -229,7 +251,12 @@ async function getApplicationById(req, res) {
       if (application.internship.recruiterId !== req.user.recruiter?.id) {
         return res.status(403).json({ error: 'Unauthorized to view applications for this internship' });
       }
-    } else if (role !== 'UNIVERSITY' && role !== 'ADMIN') {
+    } else if (role === 'UNIVERSITY') {
+      const userUniId = req.user.universityId || req.user.university?.id;
+      if (!userUniId || application.student.universityId !== userUniId) {
+        return res.status(403).json({ error: 'Unauthorized to view applications for students of other institutions' });
+      }
+    } else if (role !== 'ADMIN') {
       return res.status(403).json({ error: 'Unauthorized role' });
     }
 
@@ -408,6 +435,25 @@ async function updateApplicationStatus(req, res) {
         }
       }
     });
+
+    try {
+      const studentRecord = await prisma.student.findUnique({
+        where: { id: updatedApplication.studentId },
+        select: { userId: true }
+      });
+      if (studentRecord?.userId) {
+        await prisma.notification.create({
+          data: {
+            userId: studentRecord.userId,
+            title: `Application Status Updated: ${status}`,
+            message: `Your application for "${updatedApplication.internship.title}" at ${updatedApplication.internship.recruiter.companyName} is now ${status.toLowerCase()}.`,
+            type: 'APPLICATION'
+          }
+        });
+      }
+    } catch (notifErr) {
+      console.error('Error creating application notification:', notifErr.message);
+    }
 
     res.json({ success: true, application: updatedApplication });
   } catch (error) {

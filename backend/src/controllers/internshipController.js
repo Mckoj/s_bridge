@@ -85,7 +85,11 @@ async function createInternship(req, res) {
 
 async function getAllInternships(req, res) {
   try {
-    const { search, location, internshipType, status, skill } = req.query;
+    const { page, limit, search, location, internshipType, status, skill } = req.query;
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const skip = (pageNum - 1) * limitNum;
+    const take = limitNum;
 
     let whereClause = {};
 
@@ -128,28 +132,33 @@ async function getAllInternships(req, res) {
       };
     }
 
-    const internships = await prisma.internship.findMany({
-      where: whereClause,
-      include: {
-        recruiter: {
-          select: {
-            id: true,
-            companyName: true,
-            companyWebsite: true,
-            companyProfile: {
-              select: { logoUrl: true, address: true, industry: true }
+    const [total, internships] = await Promise.all([
+      prisma.internship.count({ where: whereClause }),
+      prisma.internship.findMany({
+        where: whereClause,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          recruiter: {
+            select: {
+              id: true,
+              companyName: true,
+              companyWebsite: true,
+              companyProfile: {
+                select: { logoUrl: true, address: true, industry: true }
+              }
             }
+          },
+          skills: {
+            include: { skill: true }
+          },
+          _count: {
+            select: { applications: true }
           }
-        },
-        skills: {
-          include: { skill: true }
-        },
-        _count: {
-          select: { applications: true }
         }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+      })
+    ]);
 
     // If the caller is a student, compute match scores using their skills
     let enrichedInternships = internships;
@@ -169,7 +178,19 @@ async function getAllInternships(req, res) {
       });
     }
 
-    res.json({ success: true, count: enrichedInternships.length, internships: enrichedInternships });
+    const totalPages = Math.ceil(total / limitNum);
+
+    res.json({
+      success: true,
+      count: enrichedInternships.length,
+      internships: enrichedInternships,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages
+      }
+    });
   } catch (error) {
     console.error('Error fetching internships:', error);
     res.status(500).json({ error: 'Failed to fetch internships' });
